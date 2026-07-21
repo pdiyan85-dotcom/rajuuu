@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
-  GestureResponderEvent,
   PanResponder,
   Platform,
   Pressable,
@@ -18,10 +17,14 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import { Audio } from 'expo-av';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ITEMS } from '@/components/GridScreen';
 import {
   BRACELET_CAPTION,
+  BRACELET_IMAGE,
   BRACELET_MEANING,
   COUPONS,
   GIF_CAPTION,
@@ -37,112 +40,100 @@ import {
   NOTE_MESSAGE,
   PHOTO_CAPTION,
   PHOTO_IMAGE,
+  VOICE_AUDIO,
   VOICE_CAPTION,
   VOICE_NOTE,
 } from '@/constants/content';
 
-const FONT = 'Caveat_400Regular';
+const FONT      = 'Caveat_400Regular';
 const FONT_BOLD = 'Caveat_700Bold';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const CARD_W = Math.min(SCREEN_W - 48, 360);
-const CARD_MAX_H = SCREEN_H * 0.72;
+const CARD_W    = Math.min(SCREEN_W - 40, 370);
+const CARD_MAX_H = SCREEN_H * 0.74;
 
 interface Props {
-  itemIndex: number;
-  onClose: () => void;
-  onNavigate: (newIndex: number) => void;
-  onReachEnd: () => void;
+  itemIndex:   number;
+  onClose:     () => void;
+  onNavigate:  (newIndex: number) => void;
+  onReachEnd:  () => void;
 }
 
 export default function CardOverlay({ itemIndex, onClose, onNavigate, onReachEnd }: Props) {
-  const cardScale = useSharedValue(0.82);
+  const cardScale   = useSharedValue(0.82);
   const cardOpacity = useSharedValue(0);
-  const overlayOpacity = useSharedValue(0);
+  const overlayOp   = useSharedValue(0);
 
   useEffect(() => {
-    cardScale.value = 0.82;
+    overlayOp.value = withTiming(1, { duration: 200 });
+  }, []);
+
+  useEffect(() => {
+    cardScale.value   = 0.82;
     cardOpacity.value = 0;
-    overlayOpacity.value = withTiming(1, { duration: 200 });
-    cardScale.value = withSpring(1, { damping: 17, stiffness: 220 });
+    cardScale.value   = withSpring(1, { damping: 17, stiffness: 220 });
     cardOpacity.value = withTiming(1, { duration: 220 });
   }, [itemIndex]);
 
-  useEffect(() => {
-    overlayOpacity.value = withTiming(1, { duration: 200 });
-  }, []);
-
-  const cardStyle = useAnimatedStyle(() => ({
+  const cardStyle    = useAnimatedStyle(() => ({
     transform: [{ scale: cardScale.value }],
     opacity: cardOpacity.value,
   }));
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOp.value }));
 
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value,
-  }));
-
-  // Swipe gesture
-  const panRef = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderRelease: (_, g) => {
-        if (g.dx < -50) {
-          // swipe left = next
-          handleNextRef.current();
-        } else if (g.dx > 50) {
-          // swipe right = prev
-          handlePrevRef.current();
-        }
-      },
-    }),
-  ).current;
-
+  // Keep navigate/end callbacks in refs so PanResponder doesn't go stale
   const handleNextRef = useRef(() => {});
   const handlePrevRef = useRef(() => {});
-
-  // update refs without re-creating panResponder
   handleNextRef.current = () => {
-    if (itemIndex < ITEMS.length - 1) {
-      onNavigate(itemIndex + 1);
-    } else {
-      onReachEnd();
-    }
+    if (itemIndex < ITEMS.length - 1) onNavigate(itemIndex + 1);
+    else onReachEnd();
   };
   handlePrevRef.current = () => {
     if (itemIndex > 0) onNavigate(itemIndex - 1);
   };
 
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -50) handleNextRef.current();
+        else if (g.dx > 50) handlePrevRef.current();
+      },
+    }),
+  ).current;
+
   const item = ITEMS[itemIndex];
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* Dim overlay */}
+      {/* Dim backdrop */}
       <Animated.View style={[StyleSheet.absoluteFill, styles.dimOverlay, overlayStyle]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
 
       {/* Card */}
-      <View style={styles.centeredContainer} pointerEvents="box-none">
-        <Animated.View
-          style={[styles.card, cardStyle]}
-          {...panRef.panHandlers}
-        >
-          {/* Close button */}
+      <View style={styles.center} pointerEvents="box-none">
+        <Animated.View style={[styles.card, cardStyle]} {...pan.panHandlers}>
+
+          {/* Close */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Feather name="x" size={20} color="#8b6f5e" />
+            <Feather name="x" size={19} color="#8b6f5e" />
           </TouchableOpacity>
 
-          {/* Card content */}
-          <CardContent itemId={item.id} />
+          {/* Content */}
+          <View style={styles.contentArea}>
+            <CardContent itemId={item.id} />
+          </View>
 
-          {/* Caption label */}
+          {/* Caption */}
           <Text style={styles.cardCaption}>{item.label}</Text>
 
-          {/* Navigation arrows */}
+          {/* Navigation */}
           <View style={styles.navRow}>
             <TouchableOpacity
-              style={[styles.navBtn, { opacity: itemIndex > 0 ? 1 : 0.2 }]}
+              style={[styles.navBtn, { opacity: itemIndex > 0 ? 1 : 0.25 }]}
               onPress={handlePrevRef.current}
               disabled={itemIndex === 0}
             >
@@ -161,10 +152,7 @@ export default function CardOverlay({ itemIndex, onClose, onNavigate, onReachEnd
               ))}
             </View>
 
-            <TouchableOpacity
-              style={styles.navBtn}
-              onPress={handleNextRef.current}
-            >
+            <TouchableOpacity style={styles.navBtn} onPress={handleNextRef.current}>
               <Feather name="chevron-right" size={22} color="#8b6f5e" />
             </TouchableOpacity>
           </View>
@@ -177,94 +165,151 @@ export default function CardOverlay({ itemIndex, onClose, onNavigate, onReachEnd
 // ── Card content switcher ────────────────────────────────────
 function CardContent({ itemId }: { itemId: string }) {
   switch (itemId) {
-    case 'voice': return <VoiceContent />;
+    case 'voice':    return <VoiceContent />;
     case 'bracelet': return <BraceletContent />;
-    case 'note': return <NoteContent />;
-    case 'photo': return <PhotoContent />;
-    case 'news': return <NewsContent />;
+    case 'note':     return <NoteContent />;
+    case 'photo':    return <PhotoContent />;
+    case 'news':     return <NewsContent />;
     case 'location': return <LocationContent />;
-    case 'gif': return <GifContent />;
-    case 'coupon': return <CouponContent />;
-    default: return null;
+    case 'gif':      return <GifContent />;
+    case 'coupon':   return <CouponContent />;
+    default:         return null;
   }
 }
 
 // ── VOICE ────────────────────────────────────────────────────
 function VoiceContent() {
+  const [sound,   setSound]   = useState<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Set audio mode once
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true }).catch(() => {});
+    return () => {
+      sound?.unloadAsync().catch(() => {});
+    };
+  }, [sound]);
+
+  const handlePlay = async () => {
+    if (VOICE_AUDIO === null) {
+      // No file yet — just toggle UI state as a demo
+      setPlaying(p => !p);
+      return;
+    }
+    if (playing) {
+      await sound?.pauseAsync();
+      setPlaying(false);
+      return;
+    }
+    if (sound) {
+      await sound.playAsync();
+      setPlaying(true);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { sound: s } = await Audio.Sound.createAsync(VOICE_AUDIO as number);
+      s.setOnPlaybackStatusUpdate((st) => {
+        if (st.isLoaded && st.didJustFinish) setPlaying(false);
+      });
+      setSound(s);
+      await s.playAsync();
+      setPlaying(true);
+    } catch {
+      // silently fail if file missing
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <View style={cardContentStyles.padded}>
-      {/* Cassette tape illustration */}
-      <View style={voiceStyles.cassette}>
-        <View style={voiceStyles.cassetteInner}>
-          {/* Left reel */}
-          <View style={voiceStyles.reel}>
-            <View style={voiceStyles.reelHub} />
-            {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-              <View
-                key={i}
-                style={[voiceStyles.reelSpoke, { transform: [{ rotate: `${deg}deg` }] }]}
-              />
-            ))}
-          </View>
-          {/* Center tape window */}
-          <View style={voiceStyles.tapeWindow}>
-            <View style={voiceStyles.tapeStrip} />
-          </View>
-          {/* Right reel */}
-          <View style={voiceStyles.reel}>
-            <View style={voiceStyles.reelHub} />
-            {[0, 60, 120, 180, 240, 300].map((deg, i) => (
-              <View
-                key={i}
-                style={[voiceStyles.reelSpoke, { transform: [{ rotate: `${deg}deg` }] }]}
-              />
-            ))}
-          </View>
+    <View style={v.wrap}>
+      {/* Cassette */}
+      <View style={v.cassette}>
+        <View style={v.inner}>
+          <Reel />
+          <View style={v.window}><View style={v.tape} /></View>
+          <Reel />
         </View>
-        {/* Cassette label */}
-        <View style={voiceStyles.cassetteLabel}>
-          <Text style={voiceStyles.cassetteLabelText}>Side A</Text>
-          <View style={voiceStyles.cassetteScrews}>
-            <View style={voiceStyles.screw} />
-            <View style={voiceStyles.screw} />
+        <View style={v.label}>
+          <Text style={v.labelText}>Side A</Text>
+          <View style={v.screws}>
+            <View style={v.screw} /><View style={v.screw} />
           </View>
         </View>
       </View>
 
       {/* Play button */}
-      <TouchableOpacity
-        style={voiceStyles.playBtn}
-        onPress={() => setPlaying(!playing)}
-      >
+      <TouchableOpacity style={v.playBtn} onPress={handlePlay} disabled={loading}>
         <Feather name={playing ? 'pause' : 'play'} size={26} color="#fdf6ee" />
       </TouchableOpacity>
 
-      <Text style={[cardContentStyles.title, { textAlign: 'center' }]}>{VOICE_CAPTION}</Text>
-      <Text style={[cardContentStyles.body, { textAlign: 'center' }]}>{VOICE_NOTE}</Text>
+      <Text style={[cc.title, { textAlign: 'center' }]}>{VOICE_CAPTION}</Text>
+      <Text style={[cc.body, { textAlign: 'center' }]}>
+        {VOICE_AUDIO === null
+          ? 'Add your audio file in constants/content.ts to enable playback'
+          : VOICE_NOTE}
+      </Text>
+    </View>
+  );
+}
+
+function Reel() {
+  return (
+    <View style={v.reel}>
+      <View style={v.hub} />
     </View>
   );
 }
 
 // ── BRACELET ─────────────────────────────────────────────────
 function BraceletContent() {
+  const [uri, setUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('bracelet_photo').then(s => { if (s) setUri(s); }).catch(() => {});
+  }, []);
+
+  const pickImage = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!r.canceled && r.assets[0]) {
+      setUri(r.assets[0].uri);
+      AsyncStorage.setItem('bracelet_photo', r.assets[0].uri).catch(() => {});
+    }
+  };
+
+  const source = uri ? { uri } : BRACELET_IMAGE;
+
   return (
-    <View style={cardContentStyles.padded}>
-      <View style={braceletStyles.imageArea}>
-        {/* Bracelet illustration using icon */}
-        <View style={braceletStyles.braceletCircle}>
-          <MaterialCommunityIcons name="link-variant" size={52} color="#8b6f5e" />
-        </View>
-        {/* Bead dots */}
-        <View style={braceletStyles.beadRow}>
-          {['#e8c4c2','#c2d4e8','#e8dfc2','#dcc2e8','#c2e8d8','#e8c2d4'].map((c, i) => (
-            <View key={i} style={[braceletStyles.bead, { backgroundColor: c }]} />
-          ))}
-        </View>
+    <View style={cc.padded}>
+      <View style={br.imageArea}>
+        {source ? (
+          <View style={br.photoFrame}>
+            <Image source={source} style={br.photo} contentFit="cover" />
+            <TouchableOpacity style={br.editBtn} onPress={pickImage}>
+              <Feather name="edit-2" size={13} color="#8b6f5e" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={br.placeholder} onPress={pickImage}>
+            <View style={br.beads}>
+              {['#e8c4c2','#c2d4e8','#e8dfc2','#dcc2e8','#c2e8d8','#e8c2d4','#e8e2c2'].map((c, i) => (
+                <View key={i} style={[br.bead, { backgroundColor: c }]} />
+              ))}
+            </View>
+            <MaterialCommunityIcons name="camera-plus-outline" size={28} color="#b8a090" />
+            <Text style={br.hint}>tap to add a photo of your bracelet</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      <Text style={cardContentStyles.title}>{BRACELET_CAPTION}</Text>
-      <Text style={cardContentStyles.body}>{BRACELET_MEANING}</Text>
+      <Text style={cc.title}>{BRACELET_CAPTION}</Text>
+      <Text style={cc.body}>{BRACELET_MEANING}</Text>
     </View>
   );
 }
@@ -272,38 +317,66 @@ function BraceletContent() {
 // ── NOTE ─────────────────────────────────────────────────────
 function NoteContent() {
   return (
-    <View style={noteStyles.paper}>
-      {/* Lines */}
+    <View style={nt.paper}>
       {Array.from({ length: 7 }).map((_, i) => (
-        <View key={i} style={[noteStyles.line, { top: 48 + i * 32 }]} />
+        <View key={i} style={[nt.line, { top: 48 + i * 32 }]} />
       ))}
-      {/* Corner doodles */}
-      <MaterialCommunityIcons name="heart" size={13} color="#c4706e" style={noteStyles.dTL} />
-      <MaterialCommunityIcons name="star" size={13} color="#c4706e" style={noteStyles.dTR} />
-      <MaterialCommunityIcons name="star-outline" size={11} color="#d4b8a0" style={noteStyles.dBL} />
-      <MaterialCommunityIcons name="heart-outline" size={11} color="#d4b8a0" style={noteStyles.dBR} />
-      <Text style={noteStyles.message}>{NOTE_MESSAGE}</Text>
+      <MaterialCommunityIcons name="heart"        size={13} color="#c4706e" style={nt.dTL} />
+      <MaterialCommunityIcons name="star"         size={13} color="#c4706e" style={nt.dTR} />
+      <MaterialCommunityIcons name="star-outline" size={11} color="#d4b8a0" style={nt.dBL} />
+      <MaterialCommunityIcons name="heart-outline"size={11} color="#d4b8a0" style={nt.dBR} />
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        <Text style={nt.message}>{NOTE_MESSAGE}</Text>
+      </ScrollView>
     </View>
   );
 }
 
 // ── PHOTO ────────────────────────────────────────────────────
 function PhotoContent() {
+  const [uri, setUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('photo_card').then(s => { if (s) setUri(s); }).catch(() => {});
+  }, []);
+
+  const pickImage = async () => {
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!r.canceled && r.assets[0]) {
+      setUri(r.assets[0].uri);
+      AsyncStorage.setItem('photo_card', r.assets[0].uri).catch(() => {});
+    }
+  };
+
+  const source = uri ? { uri } : PHOTO_IMAGE;
+  const photoSize = CARD_W - 80;
+
   return (
-    <View style={cardContentStyles.padded}>
-      <View style={photoStyles.polaroid}>
-        {PHOTO_IMAGE !== null ? (
-          <Image source={PHOTO_IMAGE} style={photoStyles.photo} contentFit="cover" />
+    <View style={cc.padded}>
+      <View style={ph.polaroid}>
+        {source ? (
+          <>
+            <Image source={source} style={[ph.photo, { width: photoSize, height: photoSize }]} contentFit="cover" />
+            <TouchableOpacity style={ph.changeBtn} onPress={pickImage}>
+              <Feather name="edit-2" size={13} color="#8b6f5e" />
+            </TouchableOpacity>
+          </>
         ) : (
-          <View style={photoStyles.placeholder}>
+          <TouchableOpacity
+            onPress={pickImage}
+            style={[ph.placeholder, { width: photoSize, height: photoSize }]}
+          >
             <Feather name="camera" size={36} color="#d4b8a0" />
-            <Text style={photoStyles.placeholderHint}>
-              add your photo in{'\n'}constants/content.ts
-            </Text>
-          </View>
+            <Text style={ph.hint}>tap to add your photo</Text>
+          </TouchableOpacity>
         )}
       </View>
-      <Text style={photoStyles.caption}>{PHOTO_CAPTION}</Text>
+      <Text style={ph.caption}>{PHOTO_CAPTION}</Text>
     </View>
   );
 }
@@ -311,15 +384,15 @@ function PhotoContent() {
 // ── NEWS ─────────────────────────────────────────────────────
 function NewsContent() {
   return (
-    <ScrollView style={newsStyles.paper} showsVerticalScrollIndicator={false}>
-      <Text style={newsStyles.masthead}>THE LITTLE TIMES</Text>
-      <View style={newsStyles.hairline} />
-      <Text style={newsStyles.date}>{NEWS_DATE} · Special Edition</Text>
-      <View style={newsStyles.hairline} />
-      <Text style={newsStyles.headline}>{NEWS_HEADLINE}</Text>
-      <Text style={newsStyles.subline}>{NEWS_SUBHEADLINE}</Text>
-      <View style={newsStyles.hairline} />
-      <Text style={newsStyles.body}>{NEWS_BODY}</Text>
+    <ScrollView style={nw.paper} showsVerticalScrollIndicator={false}>
+      <Text style={nw.masthead}>THE LITTLE TIMES</Text>
+      <View style={nw.line} />
+      <Text style={nw.date}>{NEWS_DATE} · Special Edition</Text>
+      <View style={nw.line} />
+      <Text style={nw.headline}>{NEWS_HEADLINE}</Text>
+      <Text style={nw.subline}>{NEWS_SUBHEADLINE}</Text>
+      <View style={nw.line} />
+      <Text style={nw.body}>{NEWS_BODY}</Text>
     </ScrollView>
   );
 }
@@ -327,37 +400,29 @@ function NewsContent() {
 // ── LOCATION ─────────────────────────────────────────────────
 function LocationContent() {
   return (
-    <View style={locationStyles.postcard}>
-      {/* Stamp corner */}
-      <View style={locationStyles.stamp}>
+    <View style={lc.postcard}>
+      <View style={lc.stamp}>
         <MaterialCommunityIcons name="map-marker" size={18} color="#c4706e" />
       </View>
-
-      <View style={locationStyles.pinRow}>
-        <Feather name="map-pin" size={22} color="#c4706e" />
-      </View>
-      <Text style={locationStyles.locName}>{LOCATION_NAME}</Text>
-      <Text style={locationStyles.tagline}>{LOCATION_TAGLINE}</Text>
-      <View style={locationStyles.divider} />
-      <Text style={locationStyles.note}>{LOCATION_NOTE}</Text>
-      <Text style={locationStyles.coords}>{LOCATION_COORDINATES}</Text>
+      <Feather name="map-pin" size={22} color="#c4706e" style={{ marginBottom: 8 }} />
+      <Text style={lc.name}>{LOCATION_NAME}</Text>
+      <Text style={lc.tag}>{LOCATION_TAGLINE}</Text>
+      <View style={lc.div} />
+      <Text style={lc.note}>{LOCATION_NOTE}</Text>
+      <Text style={lc.coords}>{LOCATION_COORDINATES}</Text>
     </View>
   );
 }
 
 // ── GIF ──────────────────────────────────────────────────────
 function GifContent() {
+  const size = CARD_W - 48;
   return (
-    <View style={cardContentStyles.padded}>
-      <View style={gifStyles.frame}>
-        <Image
-          source={{ uri: GIF_URL }}
-          style={gifStyles.gif}
-          contentFit="cover"
-          autoplay
-        />
+    <View style={cc.padded}>
+      <View style={[gf.frame, { width: size, height: size * 0.75 }]}>
+        <Image source={{ uri: GIF_URL }} style={gf.gif} contentFit="cover" autoplay />
       </View>
-      <Text style={[cardContentStyles.title, { textAlign: 'center', marginTop: 12 }]}>{GIF_CAPTION}</Text>
+      <Text style={[cc.title, { textAlign: 'center', marginTop: 12 }]}>{GIF_CAPTION}</Text>
     </View>
   );
 }
@@ -365,20 +430,19 @@ function GifContent() {
 // ── COUPON ────────────────────────────────────────────────────
 function CouponContent() {
   return (
-    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ padding: 14, gap: 12 }}
+    >
       {COUPONS.map((c, i) => (
-        <View key={i} style={couponStyles.ticket}>
-          {/* Left tear stub */}
-          <View style={couponStyles.stub}>
-            <Text style={couponStyles.stubNum}>{i + 1}</Text>
+        <View key={i} style={cp.ticket}>
+          <View style={cp.stub}>
+            <Text style={cp.stubNum}>{i + 1}</Text>
           </View>
-          {/* Dashed separator */}
-          <View style={couponStyles.dash} />
-          {/* Body */}
-          <View style={couponStyles.body}>
-            <Text style={couponStyles.goodFor}>GOOD FOR</Text>
-            <Text style={couponStyles.title}>{c.title}</Text>
-            <Text style={couponStyles.finePrint}>{c.finePrint}</Text>
+          <View style={cp.body}>
+            <Text style={cp.goodFor}>GOOD FOR</Text>
+            <Text style={cp.title}>{c.title}</Text>
+            <Text style={cp.fine}>{c.finePrint}</Text>
           </View>
         </View>
       ))}
@@ -386,8 +450,12 @@ function CouponContent() {
   );
 }
 
-// ── Shared card content styles ────────────────────────────────
-const cardContentStyles = StyleSheet.create({
+// ═══════════════════════════════════════════════════════════════
+//  Style sheets
+// ═══════════════════════════════════════════════════════════════
+
+// Shared card content
+const cc = StyleSheet.create({
   padded: { padding: 20, flex: 1 },
   title: {
     fontFamily: FONT_BOLD,
@@ -404,12 +472,14 @@ const cardContentStyles = StyleSheet.create({
   },
 });
 
-// ── Voice styles ──────────────────────────────────────────────
-const voiceStyles = StyleSheet.create({
+// Voice
+const v = StyleSheet.create({
+  wrap: { alignItems: 'center', padding: 20, flex: 1 },
   cassette: {
     backgroundColor: '#3a302a',
     borderRadius: 10,
     padding: 12,
+    width: '100%',
     marginBottom: 16,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -417,429 +487,272 @@ const voiceStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
-  cassetteInner: {
+  inner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
   reel: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50, height: 50, borderRadius: 25,
     backgroundColor: '#2a2220',
-    borderWidth: 2,
-    borderColor: '#5a4838',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 2, borderColor: '#5a4838',
+    alignItems: 'center', justifyContent: 'center',
   },
-  reelHub: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  hub: {
+    width: 14, height: 14, borderRadius: 7,
     backgroundColor: '#4a3828',
-    position: 'absolute',
   },
-  reelSpoke: {
-    position: 'absolute',
-    width: 2,
-    height: 18,
-    backgroundColor: '#4a3828',
-    top: 17,
-    left: 25,
-    transformOrigin: 'bottom center',
-  },
-  tapeWindow: {
-    flex: 1,
-    height: 30,
-    marginHorizontal: 8,
+  window: {
+    flex: 1, height: 28, marginHorizontal: 8,
     backgroundColor: '#1a1410',
     borderRadius: 4,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  tapeStrip: {
-    width: '80%',
-    height: 6,
-    backgroundColor: '#2a2018',
-    borderRadius: 3,
+  tape: {
+    width: '80%', height: 5,
+    backgroundColor: '#2e2418', borderRadius: 3,
   },
-  cassetteLabel: {
+  label: {
     backgroundColor: '#f8f0e0',
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    borderRadius: 5,
+    paddingVertical: 5, paddingHorizontal: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  cassetteLabelText: {
-    fontFamily: FONT_BOLD,
-    fontSize: 14,
-    color: '#3d2c1e',
-  },
-  cassetteScrews: { flexDirection: 'row', gap: 8 },
-  screw: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: '#8b6f5e',
-  },
+  labelText: { fontFamily: FONT_BOLD, fontSize: 14, color: '#3d2c1e' },
+  screws: { flexDirection: 'row', gap: 8 },
+  screw: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b6f5e' },
   playBtn: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#c4706e',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
+    alignItems: 'center', justifyContent: 'center',
     marginBottom: 14,
     shadowColor: '#c4706e',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.35, shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+    elevation: 5,
   },
 });
 
-// ── Bracelet styles ───────────────────────────────────────────
-const braceletStyles = StyleSheet.create({
+// Bracelet
+const br = StyleSheet.create({
   imageArea: { alignItems: 'center', marginBottom: 12 },
-  braceletCircle: {
-    width: 100, height: 100, borderRadius: 50,
+  photoFrame: {
+    width: CARD_W - 80, height: CARD_W - 80,
+    borderRadius: 12, overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  photo: { width: '100%', height: '100%' },
+  editBtn: {
+    position: 'absolute', bottom: 8, right: 8,
+    backgroundColor: '#fdf6ee',
+    borderRadius: 12, padding: 5,
+  },
+  placeholder: {
+    width: CARD_W - 80, height: CARD_W - 100,
+    borderRadius: 12,
     backgroundColor: '#f0e8dc',
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 2, borderColor: '#e0ccb8',
+    gap: 8,
+    borderWidth: 1.5, borderColor: '#e0cbb8', borderStyle: 'dashed',
   },
-  beadRow: {
-    flexDirection: 'row',
-    gap: 6,
+  beads: {
+    flexDirection: 'row', gap: 5, marginBottom: 4,
   },
   bead: {
-    width: 18, height: 18, borderRadius: 9,
-    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3,
-    elevation: 2,
+    width: 16, height: 16, borderRadius: 8,
+    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, elevation: 1,
+  },
+  hint: {
+    fontFamily: FONT, fontSize: 14, color: '#b8a090', textAlign: 'center',
   },
 });
 
-// ── Note styles ───────────────────────────────────────────────
-const noteStyles = StyleSheet.create({
+// Note
+const nt = StyleSheet.create({
   paper: {
     flex: 1,
     backgroundColor: '#fdf8f0',
-    padding: 20,
-    paddingTop: 36,
+    padding: 20, paddingTop: 36,
   },
   line: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    height: 1,
-    backgroundColor: '#e8d8c4',
+    position: 'absolute', left: 20, right: 20,
+    height: 1, backgroundColor: '#e8d8c4',
   },
   dTL: { position: 'absolute', top: 10, left: 10 },
   dTR: { position: 'absolute', top: 10, right: 10 },
   dBL: { position: 'absolute', bottom: 10, left: 10 },
   dBR: { position: 'absolute', bottom: 10, right: 10 },
   message: {
-    fontFamily: FONT,
-    fontSize: 19,
-    color: '#3d2c1e',
-    lineHeight: 31,
-    zIndex: 1,
+    fontFamily: FONT, fontSize: 19, color: '#3d2c1e', lineHeight: 31,
   },
 });
 
-// ── Photo styles ──────────────────────────────────────────────
-const photoStyles = StyleSheet.create({
+// Photo
+const ph = StyleSheet.create({
   polaroid: {
     backgroundColor: '#ffffff',
-    padding: 10,
-    paddingBottom: 6,
+    padding: 10, paddingBottom: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOpacity: 0.15, shadowRadius: 8,
     shadowOffset: { width: 2, height: 4 },
-    elevation: 6,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 10,
+    elevation: 6, borderRadius: 2,
+    alignSelf: 'center', marginBottom: 10,
   },
-  photo: {
-    width: CARD_W - 80,
-    height: CARD_W - 80,
-    borderRadius: 1,
+  photo: { borderRadius: 1 },
+  changeBtn: {
+    position: 'absolute', bottom: 14, right: 6,
+    backgroundColor: '#fdf6ee',
+    borderRadius: 12, padding: 5,
   },
   placeholder: {
-    width: CARD_W - 80,
-    height: CARD_W - 80,
     backgroundColor: '#f0e8dc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    alignItems: 'center', justifyContent: 'center', gap: 8,
   },
-  placeholderHint: {
-    fontFamily: FONT,
-    fontSize: 13,
-    color: '#b8a090',
-    textAlign: 'center',
+  hint: {
+    fontFamily: FONT, fontSize: 14, color: '#b8a090', textAlign: 'center',
   },
   caption: {
-    fontFamily: FONT_BOLD,
-    fontSize: 20,
-    color: '#3d2c1e',
-    textAlign: 'center',
+    fontFamily: FONT_BOLD, fontSize: 20,
+    color: '#3d2c1e', textAlign: 'center',
   },
 });
 
-// ── News styles ───────────────────────────────────────────────
-const newsStyles = StyleSheet.create({
-  paper: {
-    flex: 1,
-    backgroundColor: '#f8f4e8',
-    padding: 18,
-  },
+// News
+const nw = StyleSheet.create({
+  paper: { flex: 1, backgroundColor: '#f8f4e8', padding: 18 },
   masthead: {
-    fontFamily: FONT_BOLD,
-    fontSize: 22,
-    color: '#3d2c1e',
-    textAlign: 'center',
-    letterSpacing: 3,
-    marginBottom: 6,
+    fontFamily: FONT_BOLD, fontSize: 22, color: '#3d2c1e',
+    textAlign: 'center', letterSpacing: 3, marginBottom: 6,
   },
-  hairline: {
-    height: 1,
-    backgroundColor: '#3d2c1e',
-    marginVertical: 5,
-  },
+  line: { height: 1, backgroundColor: '#3d2c1e', marginVertical: 5 },
   date: {
-    fontFamily: FONT,
-    fontSize: 11,
-    color: '#8b6f5e',
-    textAlign: 'center',
-    marginBottom: 2,
-    letterSpacing: 0.5,
+    fontFamily: FONT, fontSize: 11, color: '#8b6f5e',
+    textAlign: 'center', letterSpacing: 0.5, marginBottom: 2,
   },
   headline: {
-    fontFamily: FONT_BOLD,
-    fontSize: 20,
-    color: '#3d2c1e',
-    marginTop: 10,
-    marginBottom: 4,
-    lineHeight: 26,
+    fontFamily: FONT_BOLD, fontSize: 20, color: '#3d2c1e',
+    marginTop: 10, marginBottom: 4, lineHeight: 26,
   },
   subline: {
-    fontFamily: FONT,
-    fontSize: 14,
-    color: '#5a4838',
-    fontStyle: 'italic',
-    marginBottom: 8,
+    fontFamily: FONT, fontSize: 14, color: '#5a4838',
+    fontStyle: 'italic', marginBottom: 8,
   },
   body: {
-    fontFamily: FONT,
-    fontSize: 15,
-    color: '#3d2c1e',
-    lineHeight: 22,
+    fontFamily: FONT, fontSize: 15, color: '#3d2c1e', lineHeight: 22,
   },
 });
 
-// ── Location styles ───────────────────────────────────────────
-const locationStyles = StyleSheet.create({
-  postcard: {
-    flex: 1,
-    backgroundColor: '#fdf8ee',
-    padding: 22,
-  },
+// Location
+const lc = StyleSheet.create({
+  postcard: { flex: 1, backgroundColor: '#fdf8ee', padding: 22 },
   stamp: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 44,
-    height: 52,
+    position: 'absolute', top: 12, right: 12,
+    width: 44, height: 52,
     backgroundColor: '#ede0d4',
-    borderWidth: 1,
-    borderColor: '#d4b8a0',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1, borderColor: '#d4b8a0',
+    alignItems: 'center', justifyContent: 'center',
     borderRadius: 3,
   },
-  pinRow: { marginBottom: 8 },
-  locName: {
-    fontFamily: FONT_BOLD,
-    fontSize: 26,
-    color: '#3d2c1e',
-    marginBottom: 4,
-    marginRight: 56,
+  name: {
+    fontFamily: FONT_BOLD, fontSize: 26, color: '#3d2c1e',
+    marginBottom: 4, marginRight: 56,
   },
-  tagline: {
-    fontFamily: FONT,
-    fontSize: 15,
-    color: '#8b6f5e',
-    fontStyle: 'italic',
-    marginBottom: 14,
+  tag: {
+    fontFamily: FONT, fontSize: 15, color: '#8b6f5e',
+    fontStyle: 'italic', marginBottom: 14,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#e0cbb8',
-    marginBottom: 14,
-  },
+  div: { height: 1, backgroundColor: '#e0cbb8', marginBottom: 14 },
   note: {
-    fontFamily: FONT,
-    fontSize: 18,
-    color: '#3d2c1e',
-    lineHeight: 26,
-    marginBottom: 16,
+    fontFamily: FONT, fontSize: 18, color: '#3d2c1e',
+    lineHeight: 26, marginBottom: 16,
   },
   coords: {
-    fontFamily: FONT,
-    fontSize: 12,
-    color: '#b8a090',
-    letterSpacing: 0.5,
+    fontFamily: FONT, fontSize: 12, color: '#b8a090', letterSpacing: 0.5,
   },
 });
 
-// ── Gif styles ────────────────────────────────────────────────
-const gifStyles = StyleSheet.create({
+// Gif
+const gf = StyleSheet.create({
   frame: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#ede0d4',
-    alignSelf: 'center',
-    width: CARD_W - 48,
-    height: CARD_W - 80,
+    borderRadius: 16, overflow: 'hidden',
+    backgroundColor: '#ede0d4', alignSelf: 'center',
   },
-  gif: {
-    width: '100%',
-    height: '100%',
-  },
+  gif: { width: '100%', height: '100%' },
 });
 
-// ── Coupon styles ─────────────────────────────────────────────
-const couponStyles = StyleSheet.create({
+// Coupon
+const cp = StyleSheet.create({
   ticket: {
     flexDirection: 'row',
     backgroundColor: '#fdf6ee',
-    borderRadius: 10,
-    overflow: 'hidden',
+    borderRadius: 10, overflow: 'hidden',
     shadowColor: '#3d2c1e',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOpacity: 0.1, shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
   stub: {
-    width: 40,
-    backgroundColor: '#c4706e',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 40, backgroundColor: '#c4706e',
+    alignItems: 'center', justifyContent: 'center',
   },
   stubNum: {
-    fontFamily: FONT_BOLD,
-    fontSize: 20,
-    color: '#ffffff',
+    fontFamily: FONT_BOLD, fontSize: 20, color: '#fff',
     transform: [{ rotate: '-90deg' }],
   },
-  dash: {
-    width: 1,
-    backgroundColor: '#e8d5c4',
-    borderStyle: 'dashed',
-    borderLeftWidth: 2,
-    borderColor: '#d4b8a0',
-  },
-  body: {
-    flex: 1,
-    padding: 14,
-  },
+  body: { flex: 1, padding: 14 },
   goodFor: {
-    fontFamily: FONT,
-    fontSize: 11,
-    color: '#b8a090',
-    letterSpacing: 1.5,
-    marginBottom: 3,
+    fontFamily: FONT, fontSize: 11, color: '#b8a090',
+    letterSpacing: 1.5, marginBottom: 3,
   },
   title: {
-    fontFamily: FONT_BOLD,
-    fontSize: 20,
-    color: '#3d2c1e',
-    marginBottom: 3,
+    fontFamily: FONT_BOLD, fontSize: 20, color: '#3d2c1e', marginBottom: 3,
   },
-  finePrint: {
-    fontFamily: FONT,
-    fontSize: 13,
-    color: '#8b6f5e',
-    fontStyle: 'italic',
+  fine: {
+    fontFamily: FONT, fontSize: 13, color: '#8b6f5e', fontStyle: 'italic',
   },
 });
 
-// ── Overlay / card wrapper styles ─────────────────────────────
+// ── Overlay shell ─────────────────────────────────────────────
 const styles = StyleSheet.create({
-  dimOverlay: {
-    backgroundColor: 'rgba(30, 20, 15, 0.6)',
-  },
-  centeredContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
+  dimOverlay: { backgroundColor: 'rgba(30,20,15,0.62)' },
+  center: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20,
   },
   card: {
     width: CARD_W,
     maxHeight: CARD_MAX_H,
     backgroundColor: '#fdf6ee',
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'hidden',
     shadowColor: '#3d2c1e',
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 12,
+    shadowOpacity: 0.28, shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 14,
   },
+  contentArea: { flex: 1 },
   closeBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', top: 10, right: 10, zIndex: 10,
+    width: 32, height: 32, borderRadius: 16,
     backgroundColor: '#f0e4d3',
-    borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
   },
   cardCaption: {
-    fontFamily: FONT_BOLD,
-    fontSize: 15,
-    color: '#8b6f5e',
-    textAlign: 'center',
-    letterSpacing: 1.2,
-    paddingBottom: 6,
-    paddingTop: 2,
-    textTransform: 'lowercase',
+    fontFamily: FONT_BOLD, fontSize: 14, color: '#8b6f5e',
+    textAlign: 'center', letterSpacing: 1.2,
+    paddingVertical: 5, textTransform: 'lowercase',
   },
   navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: '#ede0d4',
+    paddingHorizontal: 12, paddingBottom: 12, paddingTop: 4,
+    borderTopWidth: 1, borderTopColor: '#ede0d4',
   },
   navBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
   },
-  dotRow: {
-    flexDirection: 'row',
-    gap: 5,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
+  dotRow: { flexDirection: 'row', gap: 5, alignItems: 'center' },
+  dot: { width: 7, height: 7, borderRadius: 3.5 },
 });
