@@ -1,0 +1,88 @@
+Build a website called "Little Box of Goodies" — a digital care package unboxing experience for 
+a friend/loved one. This is a single-page interactive site, no login required, viewed as a story-like 
+scrapbook experience. Aesthetic: warm, cozy, hand-drawn, cute scrapbook/journal style — think cream 
+and beige tones, dusty pink/red accents, soft paper textures, doodled icons, polaroid photo frames, 
+and a handwritten-style font for notes (something like "Caveat", "Homemade Apple", or "Patrick Hand" 
+from Google Fonts). NOT flashy or modern-corporate — it should feel like a handmade gift.
+
+BACKGROUND: soft cream/beige (#f0e4d3 style) throughout the whole site, like old paper or a warm 
+tabletop. Subtle paper-grain texture if possible.
+
+────────────────────────────────────────
+SCREEN 1 — "You've Got Mail"
+────────────────────────────────────────
+Center of screen: an illustrated cardboard box (simple flat illustration, warm brown tones) with:
+- A shipping label on the front reading "DIGITAL CARE PACKAGE", with small "TO:" and "FROM:" fields 
+  (placeholder names, editable later), and a barcode graphic under it
+- A small red heart sticker in the corner of the label
+- Heading above the box: "you've got mail" in elegant serif or script font
+- Small caption below: "tap to open"
+- Gentle idle animation on the box — a soft sway or breathing scale, like it's excited to be opened
+
+On tap/click: box animates opening (lid flaps flip open, maybe a little bounce/shake first like 
+tearing tape), then transitions smoothly into Screen 2.
+
+────────────────────────────────────────
+SCREEN 2 — "Your Little Box of Goodies" (Menu Grid)
+────────────────────────────────────────
+Heading: "your little box of goodies" in the same elegant script font.
+
+Below it, a grid of small hand-drawn-style icon items, each with a label underneath, scattered 
+slightly (not a rigid grid — natural, slightly rotated/offset like objects placed by hand):
+- 🎙️ Voice — labeled "voice"
+- 🧵 Friendship bracelet icon — labeled "bracelet"  
+- 📝 Typewriter/note icon — labeled "note"
+- 📷 Polaroid photo icon — labeled "photo"
+- 📰 Newspaper clipping icon — labeled "news"
+- 📍 Location pin icon — labeled "location"
+- 🎀 Gift bow / GIF icon — labeled "gif"
+- 🎫 Coupon/ticket icon — labeled "coupon"
+
+Each icon:
+- Has a soft drop shadow like it's sitting on a table
+- On hover: gently lifts/scales up with a little wobble
+- On click: opens a full-screen "card" overlay showing that item's content (see below)
+
+────────────────────────────────────────
+SCREEN 3 — Content Cards (opened one at a time, story-style)
+────────────────────────────────────────
+When an icon is tapped, show a centered polaroid-style card that fades/scales in, with the item's 
+content, plus a small caption label underneath in the script font (e.g. "songs", "photos", "videos"). 
+Include a close (X) or swipe-away gesture to return to the grid. Support left/right arrow or swipe 
+navigation between opened items, like flipping through a stack of photos.
+
+Content types to support per icon:
+- Voice → simple audio player styled like a cute cassette tape, with a caption
+- Bracelet → an image/illustration with a short caption about what it means
+- Note → a handwritten-style card with a short custom message, decorated with small doodles 
+  (hearts, stars, tiny arrows) hand-drawn in the corners
+- Photo → a polaroid-framed image (or small photo carousel) with a handwritten caption underneath
+- News → a "newspaper clipping" styled card with a fun custom headline
+- Location → a small map-pin card noting a meaningful place, styled like a postcard
+- Gif → an embedded short looping animation/gif in a rounded frame
+- Coupon → a cute "redeemable coupon" card (e.g. "good for one hug", "good for one movie night") 
+  with a torn-ticket edge design
+
+Each card should feel personal and a little playful — like flipping through a handmade scrapbook.
+
+────────────────────────────────────────
+FINAL SCREEN — "And Little Goodies"
+────────────────────────────────────────
+After all items are viewed (or as the last card in the sequence), show a closing note card:
+- Heading: "and little goodies ❤️" in the script font
+- A handwritten-style note with a few doodled hearts/stars/stitching around the edges saying 
+  something warm and personal (placeholder: "you're doing amazing! you're my star and my heart's 
+  home")
+- A small "replay" button to go back to Screen 1 and experience it again
+
+────────────────────────────────────────
+GENERAL NOTES
+────────────────────────────────────────
+- Smooth, gentle animations throughout — soft easing, no harsh/robotic transitions
+- Mobile-first: this should feel like a phone-sized experience even on desktop (constrain content 
+  to a centered narrow column like a phone screen, similar to how Instagram Reels look, with 
+  padding/background around it on wider screens)
+- Small mute/unmute icon if background audio (soft ambient/lofi tune) is included
+- Keep all text content in variables/placeholders that are easy to find and edit later, since I'll 
+  personalize names, notes, and photos afterward
+- No backend/database needed — this can be a fully static/local-state React or HTML/CSS/JS site
