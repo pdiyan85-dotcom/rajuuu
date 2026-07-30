@@ -91,27 +91,50 @@ function getBasePath(): string {
   return import.meta.env.BASE_URL.replace(/\/$/, "");
 }
 
-function getPreviewExamplePath(): string {
-  const basePath = getBasePath();
-  return `${basePath}/preview/ComponentName`;
+function getDiscoveredComponentPaths(modules: ModuleMap): string[] {
+  return Object.keys(modules)
+    .map((key) =>
+      key.replace(/^\.\/components\/mockups\//, "").replace(/\.tsx$/, ""),
+    )
+    .sort();
 }
 
-function Gallery() {
+function Gallery({ modules }: { modules: ModuleMap }) {
+  const basePath = getBasePath();
+  const componentPaths = getDiscoveredComponentPaths(modules);
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-      <div className="text-center max-w-md">
+      <div className="text-center max-w-md w-full">
         <h1 className="text-2xl font-semibold text-gray-900 mb-3">
           Component Preview Server
         </h1>
         <p className="text-gray-500 mb-4">
           This server renders individual components for the workspace canvas.
         </p>
-        <p className="text-sm text-gray-400">
-          Access component previews at{" "}
-          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-            {getPreviewExamplePath()}
-          </code>
-        </p>
+
+        {componentPaths.length > 0 ? (
+          <ul className="text-left text-sm bg-white rounded border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+            {componentPaths.map((componentPath) => (
+              <li key={componentPath}>
+                <a
+                  href={`${basePath}/preview/${componentPath}`}
+                  className="block px-3 py-2 text-blue-600 hover:bg-gray-50"
+                >
+                  {componentPath}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-400">
+            No components found yet. Add one under{" "}
+            <code className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+              src/components/mockups/
+            </code>{" "}
+            and it will show up here automatically.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -140,7 +163,7 @@ function App() {
     );
   }
 
-  return <Gallery />;
+  return <Gallery modules={discoveredModules} />;
 }
 
 export default App;
