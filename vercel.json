@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @workspace/mockup-sandbox run build && rm -rf dist && mv \"$(pnpm --filter @workspace/mockup-sandbox exec pwd)/dist\" dist",
+  "buildCommand": "pnpm --filter @workspace/mockup-sandbox run build && SRC=\"$(pnpm --filter @workspace/mockup-sandbox exec pwd)/dist\" && DEST=\"$(pwd)/dist\" && ( [ \"$SRC\" = \"$DEST\" ] || ( rm -rf dist && mv \"$SRC\" dist ) )",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
