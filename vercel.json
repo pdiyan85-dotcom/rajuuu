@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd artifacts/mockup-sandbox && npm install && npm run build",
+  "outputDirectory": "artifacts/mockup-sandbox/dist",
+  "framework": "vite"
+}
