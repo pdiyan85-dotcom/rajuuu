@@ -1,7 +1,6 @@
 {
-  "framework": "vite",
-  "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "pnpm --filter @workspace/mockup-sandbox run build",
+  "outputDirectory": "artifacts/mockup-sandbox/dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
