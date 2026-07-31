@@ -5,7 +5,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
-
+app.use(cors());
 app.use(
   (pinoHttp as any)({
     logger,
