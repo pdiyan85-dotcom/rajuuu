@@ -105,7 +105,14 @@ async function buildAll() {
       "puppeteer-core",
       "electron",
     ],
-    sourcemap: "linked",
+    // Disabled on Vercel: linked source maps reference the original .ts
+    // files (e.g. src/routes/health.ts), and Vercel's function builder
+    // discovers and individually type-checks those originals as part of
+    // its own build step. That check resolves @workspace/api-zod via its
+    // package.json's raw "./src/index.ts" export (outside this project's
+    // rootDir), which TypeScript can't emit for, failing the whole build
+    // with "Emit skipped" regardless of what buildCommand already built.
+    sourcemap: process.env.VERCEL ? false : "linked",
     plugins: [
       // pino relies on workers to handle logging, instead of externalizing it we use a plugin to handle it
       esbuildPluginPino({ transports: ["pino-pretty"] })
