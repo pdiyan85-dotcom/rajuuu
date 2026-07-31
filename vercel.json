@@ -1,11 +1,5 @@
 {
-  "buildCommand": "pnpm install && pnpm --filter @workspace/mockup-sandbox run build",
-  "outputDirectory": "artifacts/mockup-sandbox/dist",
-  "framework": null,
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist"
 }
