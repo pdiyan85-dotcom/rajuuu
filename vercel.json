@@ -1,10 +1,12 @@
 {
   "buildCommand": "pnpm --filter @workspace/api-server run build",
   "outputDirectory": "artifacts/api-server/dist",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.mjs"
+  "functions": {
+    "artifacts/api-server/dist/vercel.mjs": {
+      "runtime": "@vercel/node"
     }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/vercel.mjs" }
   ]
 }
