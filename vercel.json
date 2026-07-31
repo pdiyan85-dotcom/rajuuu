@@ -1,8 +1,11 @@
 {
-  "buildCommand": "pnpm --filter @workspace/mockup-sandbox run build && SRC=\"$(pnpm --filter @workspace/mockup-sandbox exec pwd)/dist\" && DEST=\"$(pwd)/dist\" && ( [ \"$SRC\" = \"$DEST\" ] || ( rm -rf dist && mv \"$SRC\" dist ) )",
-  "outputDirectory": "dist",
+  "buildCommand": "pnpm --filter @workspace/mockup-sandbox run build",
+  "outputDirectory": "artifacts/mockup-sandbox/dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
