@@ -75,6 +75,15 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  # Force a single @types/react(-dom) version across the workspace. Two
+  # versions (19.1.x from mobile's Expo pin, 19.2.x from the catalog) were
+  # coexisting, and pnpm's phantom-dependency hoisting for packages that
+  # bare-import 'react' in their .d.ts (e.g. lucide-react) nondeterministically
+  # picked one, causing "two different types with this name" TS errors in
+  # mockup-sandbox. Types-only; does not affect the pinned react/react-dom
+  # runtime version below.
+  '@types/react': ^19.2.0
+  '@types/react-dom': ^19.2.0
   # replit uses linux-x64 only, we can exclude all other platforms
   "esbuild>@esbuild/darwin-arm64": "-"
   "esbuild>@esbuild/darwin-x64": "-"
