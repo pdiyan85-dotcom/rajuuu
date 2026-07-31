@@ -1,15 +1,4 @@
 {
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
-    }
-  ],
-  "functions": {
-    "api/index.mjs": {
-      "includeFiles": "dist/**"
-    }
-  }
+  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build"
 }
