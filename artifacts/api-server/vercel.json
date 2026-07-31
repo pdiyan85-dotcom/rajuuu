@@ -1,6 +1,6 @@
 {
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build",
+  "buildCommand": "cd ../.. && pnpm run typecheck:libs && pnpm --filter @workspace/api-server run build",
   "rewrites": [
     {
       "source": "/(.*)",
