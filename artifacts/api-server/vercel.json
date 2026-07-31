@@ -1,4 +1,10 @@
 {
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build"
+  "buildCommand": "cd ../.. && pnpm --filter @workspace/api-server run build",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    }
+  ]
 }
