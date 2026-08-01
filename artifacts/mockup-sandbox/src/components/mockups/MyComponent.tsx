@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 // --- TYPES ---
 interface GoodieItem {
   id: string;
-  type: "voice" | "bracelet" | "note" | "photo" | "news" | "location" | "gif" | "coupon";
+  type: "voice" | "note" | "photo" | "news" | "location" | "gif" | "coupon";
   title: string;
   icon: string;
   rotation: number;
@@ -17,6 +17,10 @@ interface BoxData {
   headlineText: string;
   locationTitle: string;
   locationDesc: string;
+  locationImage: string;
+  photoUrl: string;
+  photoCaption: string;
+  audioUrl: string;
 }
 
 const DEFAULT_DATA: BoxData = {
@@ -29,20 +33,41 @@ const DEFAULT_DATA: BoxData = {
   headlineText: "WORLD BREAKING NEWS: You Are Officially The Best Person Ever!",
   locationTitle: "Our Cozy Favorite Spot",
   locationDesc: "Where we sat for hours, drank warm tea, and laughed until our stomachs hurt! ☕✨",
+  locationImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+  photoUrl: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=600&q=80",
+  photoCaption: "Precious memories together ✨",
+  audioUrl: "",
 };
 
 export default function LittleBoxOfGoodies() {
-  // Screen state: 1 = You've Got Mail, 2 = Tabletop Grid, 3 = Final Card
   const [screen, setScreen] = useState<number>(1);
   const [isOpeningBox, setIsOpeningBox] = useState<boolean>(false);
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [viewedItems, setViewedItems] = useState<Set<string>>(new Set());
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
-  const [boxData, setBoxData] = useState<BoxData>(DEFAULT_DATA);
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   
-  // Audio state
-  const [cassettePlaying, setCassettePlaying] = useState<boolean>(false);
+  // Custom Box Data with LocalStorage Persistence
+  const [boxData, setBoxData] = useState<BoxData>(() => {
+    try {
+      const saved = localStorage.getItem("goodies_box_data");
+      return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : DEFAULT_DATA;
+    } catch {
+      return DEFAULT_DATA;
+    }
+  });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+
+  // Audio Recording & Playback State
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingTime, setRecordingTime] = useState<number>(0);
+  const [voiceAudioPlaying, setVoiceAudioPlaying] = useState<boolean>(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const recordingTimerRef = useRef<any>(null);
+
+  // Coupons
   const [couponsRedeemed, setCouponsRedeemed] = useState<Record<number, boolean>>({
     0: false,
     1: false,
@@ -52,10 +77,9 @@ export default function LittleBoxOfGoodies() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthIntervalRef = useRef<any>(null);
 
-  // Goodies items definition
+  // Goodies items definition (BRACELET DELETED as requested)
   const goodies: GoodieItem[] = [
     { id: "voice", type: "voice", title: "Voice Note", icon: "🎙️", rotation: -3 },
-    { id: "bracelet", type: "bracelet", title: "Bracelet", icon: "🧵", rotation: 4 },
     { id: "note", type: "note", title: "Secret Note", icon: "📝", rotation: -2 },
     { id: "photo", type: "photo", title: "Photo Memory", icon: "📷", rotation: 5 },
     { id: "news", type: "news", title: "News Flash", icon: "📰", rotation: -4 },
@@ -63,6 +87,15 @@ export default function LittleBoxOfGoodies() {
     { id: "gif", type: "gif", title: "Warm Hugs", icon: "🎀", rotation: -5 },
     { id: "coupon", type: "coupon", title: "Love Coupons", icon: "🎫", rotation: 2 },
   ];
+
+  // Save boxData to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("goodies_box_data", JSON.stringify(boxData));
+    } catch (e) {
+      console.log("Could not save to localStorage", e);
+    }
+  }, [boxData]);
 
   // Ambient sound synthesizer
   const toggleAmbientSound = () => {
@@ -77,7 +110,6 @@ export default function LittleBoxOfGoodies() {
         const ctx = new AudioContextClass();
         audioCtxRef.current = ctx;
 
-        // Gentle lofi notes sequence (C Major pentatonic: C4, E4, G4, A4, C5)
         const notes = [261.63, 329.63, 392.0, 440.0, 523.25];
         let step = 0;
 
@@ -89,7 +121,7 @@ export default function LittleBoxOfGoodies() {
           osc.frequency.value = notes[step % notes.length];
           step++;
 
-          gain.gain.setValueAtTime(0.05, ctx.currentTime);
+          gain.gain.setValueAtTime(0.04, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.8);
 
           osc.connect(gain);
@@ -102,7 +134,7 @@ export default function LittleBoxOfGoodies() {
         synthIntervalRef.current = setInterval(playNote, 1200);
         setIsAudioPlaying(true);
       } catch (err) {
-        console.log("Audio not supported or blocked", err);
+        console.log("Audio not supported", err);
       }
     }
   };
@@ -114,7 +146,87 @@ export default function LittleBoxOfGoodies() {
     };
   }, []);
 
-  // Handle Box Opening
+  // Voice Recording Functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setBoxData((prev) => ({ ...prev, audioUrl }));
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      alert("Microphone access is required to record voice notes. Please grant microphone permission!");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    }
+  };
+
+  // Voice Playback Toggle
+  const toggleVoicePlayback = () => {
+    if (!boxData.audioUrl) return;
+
+    if (!audioElementRef.current) {
+      audioElementRef.current = new Audio(boxData.audioUrl);
+      audioElementRef.current.onended = () => setVoiceAudioPlaying(false);
+    }
+
+    if (voiceAudioPlaying) {
+      audioElementRef.current.pause();
+      setVoiceAudioPlaying(false);
+    } else {
+      audioElementRef.current.play();
+      setVoiceAudioPlaying(true);
+    }
+  };
+
+  // Image Upload Handlers
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, key: "photoUrl" | "locationImage") => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBoxData((prev) => ({ ...prev, [key]: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Audio File Upload Handler
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBoxData((prev) => ({ ...prev, audioUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleOpenBox = () => {
     setIsOpeningBox(true);
     setTimeout(() => {
@@ -123,14 +235,12 @@ export default function LittleBoxOfGoodies() {
     }, 1100);
   };
 
-  // Open item detail
   const handleOpenItem = (index: number) => {
     setActiveItemIndex(index);
     const item = goodies[index];
     setViewedItems((prev) => new Set(prev).add(item.id));
   };
 
-  // Navigation between cards
   const handleNextCard = () => {
     if (activeItemIndex !== null) {
       const nextIdx = (activeItemIndex + 1) % goodies.length;
@@ -155,30 +265,30 @@ export default function LittleBoxOfGoodies() {
         fontFamily: "'Caveat', cursive, 'Outfit', sans-serif",
       }}
     >
-      {/* Top Header Bar */}
+      {/* Top Floating Controls */}
       <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center gap-2">
         <button
           onClick={toggleAmbientSound}
-          className="bg-white/90 backdrop-blur border border-amber-200 shadow-md hover:bg-amber-50 text-amber-900 px-3.5 py-1.5 rounded-full text-base sm:text-lg flex items-center gap-2 transition"
+          className="bg-white/90 backdrop-blur border border-amber-200 shadow-md hover:bg-amber-50 text-amber-900 px-3 py-1.5 rounded-full text-base sm:text-lg flex items-center gap-2 transition"
           title="Toggle Lofi Ambient Sound"
         >
           <span>{isAudioPlaying ? "🔊" : "🔇"}</span>
-          <span className="font-semibold text-sm sm:text-base hidden xs:inline">
+          <span className="font-semibold text-xs sm:text-sm hidden xs:inline">
             {isAudioPlaying ? "Lofi Music ON" : "Music OFF"}
           </span>
         </button>
 
         <button
           onClick={() => setIsEditModalOpen(true)}
-          className="bg-white/90 backdrop-blur border border-amber-200 shadow-md hover:bg-amber-50 text-amber-900 p-2 rounded-full text-lg transition"
-          title="Personalize Names & Messages"
+          className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition"
+          title="Add Real Photos, Voice Audio & Memories"
         >
-          ✏️
+          ✏️ <span>Customize Box</span>
         </button>
       </div>
 
       {/* Main Container Phone Frame Simulation */}
-      <div className="w-full max-w-md bg-[#faf4ec] min-h-[640px] sm:min-h-[700px] rounded-3xl shadow-2xl border-4 border-[#e5d6c3] overflow-hidden flex flex-col relative">
+      <div className="w-full max-w-md bg-[#faf4ec] min-h-[650px] sm:min-h-[720px] rounded-3xl shadow-2xl border-4 border-[#e5d6c3] overflow-hidden flex flex-col relative">
         {/* Decorative Tape Accents */}
         <div className="absolute top-2 left-6 w-16 h-5 bg-amber-100/60 rotate-[-4deg] z-10 pointer-events-none border border-amber-200/50 shadow-sm" />
         <div className="absolute top-2 right-6 w-16 h-5 bg-amber-100/60 rotate-[4deg] z-10 pointer-events-none border border-amber-200/50 shadow-sm" />
@@ -189,7 +299,7 @@ export default function LittleBoxOfGoodies() {
         {screen === 1 && (
           <div className="flex-1 flex flex-col items-center justify-between p-6 text-center z-10 relative">
             <div className="mt-4">
-              <span className="text-amber-800/60 text-sm tracking-widest uppercase font-sans font-bold">
+              <span className="text-amber-800/60 text-xs tracking-widest uppercase font-sans font-bold">
                 Special Delivery
               </span>
               <h1 className="text-4xl sm:text-5xl font-bold text-amber-950 mt-1 font-serif">
@@ -211,14 +321,13 @@ export default function LittleBoxOfGoodies() {
             >
               {/* Packaging Tape Ribbon */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-48 h-8 bg-amber-200/80 border border-amber-300 rounded shadow-sm z-20 flex items-center justify-center">
-                <span className="text-amber-900/60 text-xs tracking-widest font-mono uppercase">
+                <span className="text-amber-900/70 text-xs tracking-widest font-mono uppercase font-bold">
                   ✂️ FRAGILE WITH CARE
                 </span>
               </div>
 
               {/* Cardboard Box Body */}
               <div className="w-64 h-56 sm:w-72 sm:h-64 bg-[#b88652] rounded-2xl shadow-xl border-4 border-[#936639] flex flex-col justify-between p-4 relative overflow-hidden">
-                {/* Box Texture lines */}
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:8px_8px]" />
 
                 {/* Shipping Label */}
@@ -238,7 +347,6 @@ export default function LittleBoxOfGoodies() {
                       </div>
                     </div>
 
-                    {/* Stamp & Sticker */}
                     <div className="flex flex-col items-end gap-1">
                       <span className="text-2xl animate-bounce">❤️</span>
                       <div className="w-8 h-8 border-2 border-dashed border-red-400 rounded-full flex items-center justify-center text-[9px] text-red-600 font-serif font-bold rotate-12">
@@ -251,11 +359,7 @@ export default function LittleBoxOfGoodies() {
                   <div className="mt-2 pt-2 border-t border-amber-200/60 flex items-center justify-between">
                     <div className="h-4 flex gap-1 items-center opacity-70">
                       {[3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5].map((w, i) => (
-                        <div
-                          key={i}
-                          className="h-full bg-amber-950"
-                          style={{ width: `${w}px` }}
-                        />
+                        <div key={i} className="h-full bg-amber-950" style={{ width: `${w}px` }} />
                       ))}
                     </div>
                     <span className="text-[9px] font-mono text-amber-800/60">
@@ -264,14 +368,12 @@ export default function LittleBoxOfGoodies() {
                   </div>
                 </div>
 
-                {/* Open Instruction Sticker */}
-                <div className="self-center bg-red-500 text-white font-bold text-base px-4 py-1 rounded-full shadow-lg transform group-hover:scale-110 transition">
+                <div className="self-center bg-red-500 text-white font-bold text-base px-4 py-1.5 rounded-full shadow-lg transform group-hover:scale-110 transition">
                   🎁 TAP TO OPEN
                 </div>
               </div>
             </div>
 
-            {/* Bottom Caption */}
             <div className="mb-4">
               <p className="text-amber-800/70 text-lg">
                 Made with love & special memories ✨
@@ -285,8 +387,7 @@ export default function LittleBoxOfGoodies() {
         {/* ---------------------------------------------------- */}
         {screen === 2 && (
           <div className="flex-1 flex flex-col p-4 sm:p-6 z-10 overflow-y-auto">
-            {/* Header */}
-            <div className="text-center mt-2 mb-4">
+            <div className="text-center mt-1 mb-3">
               <h2 className="text-3xl sm:text-4xl font-bold text-amber-950 font-serif">
                 your little box of goodies
               </h2>
@@ -295,8 +396,8 @@ export default function LittleBoxOfGoodies() {
               </p>
 
               {/* Progress Bar */}
-              <div className="mt-3 bg-amber-100/80 rounded-full p-1.5 border border-amber-200/80 flex items-center justify-between text-xs text-amber-900 font-semibold px-3 max-w-xs mx-auto">
-                <span>Unboxed: {viewedItems.size} / 8</span>
+              <div className="mt-2.5 bg-amber-100/80 rounded-full p-1.5 border border-amber-200/80 flex items-center justify-between text-xs text-amber-900 font-semibold px-3 max-w-xs mx-auto">
+                <span>Unboxed: {viewedItems.size} / 7</span>
                 <div className="flex gap-1">
                   {goodies.map((g) => (
                     <span
@@ -310,8 +411,8 @@ export default function LittleBoxOfGoodies() {
               </div>
             </div>
 
-            {/* Goodies Scattered Tabletop Grid */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 my-auto py-2">
+            {/* Scattered Tabletop Grid */}
+            <div className="grid grid-cols-2 gap-3 my-auto py-2">
               {goodies.map((item, index) => {
                 const isViewed = viewedItems.has(item.id);
                 return (
@@ -319,11 +420,10 @@ export default function LittleBoxOfGoodies() {
                     key={item.id}
                     onClick={() => handleOpenItem(index)}
                     style={{ transform: `rotate(${item.rotation}deg)` }}
-                    className={`group relative bg-white/90 rounded-2xl p-4 shadow-md border-2 border-amber-200/80 hover:border-amber-400 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center justify-center ${
+                    className={`group relative bg-white/90 rounded-2xl p-3.5 shadow-md border-2 border-amber-200/80 hover:border-amber-400 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center flex flex-col items-center justify-center ${
                       isViewed ? "bg-amber-50/60 border-amber-300" : ""
                     }`}
                   >
-                    {/* Washi Tape strip on card corner */}
                     <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-10 h-4 bg-amber-100/80 border border-amber-200/60 rotate-[-2deg] shadow-2xs pointer-events-none" />
 
                     {isViewed && (
@@ -332,11 +432,11 @@ export default function LittleBoxOfGoodies() {
                       </span>
                     )}
 
-                    <div className="text-4xl sm:text-5xl my-1 transform group-hover:scale-125 transition duration-300">
+                    <div className="text-4xl my-1 transform group-hover:scale-125 transition duration-300">
                       {item.icon}
                     </div>
 
-                    <span className="text-xl sm:text-2xl font-bold text-amber-950 mt-1">
+                    <span className="text-xl font-bold text-amber-950 mt-1">
                       {item.title}
                     </span>
                   </button>
@@ -344,13 +444,13 @@ export default function LittleBoxOfGoodies() {
               })}
             </div>
 
-            {/* Footer Finish / Replay button */}
-            <div className="mt-4 text-center">
+            {/* Footer Closing Card Button */}
+            <div className="mt-3 text-center">
               <button
                 onClick={() => setScreen(3)}
                 className="w-full bg-gradient-to-r from-red-500 to-amber-600 text-white font-bold text-xl py-3 px-6 rounded-2xl shadow-lg hover:from-red-600 hover:to-amber-700 transition"
               >
-                {viewedItems.size === 8 ? "✨ Open Final Card ❤️" : "Read Closing Card ❤️"}
+                {viewedItems.size === 7 ? "✨ Open Final Card ❤️" : "Read Closing Card ❤️"}
               </button>
             </div>
           </div>
@@ -362,7 +462,6 @@ export default function LittleBoxOfGoodies() {
         {screen === 3 && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-10 my-auto">
             <div className="bg-[#fffdf9] rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-200 max-w-sm w-full relative rotate-[-1deg]">
-              {/* Tape corner */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-6 bg-red-100/80 border border-red-200 rotate-1 shadow-sm" />
 
               <span className="text-4xl sm:text-5xl block mb-2">🎁✨</span>
@@ -401,7 +500,7 @@ export default function LittleBoxOfGoodies() {
       </div>
 
       {/* ---------------------------------------------------- */}
-      {/* SCREEN CONTENT CARDS OVERLAY MODAL */}
+      {/* CONTENT CARDS OVERLAY MODAL */}
       {/* ---------------------------------------------------- */}
       {activeItemIndex !== null && (
         <div className="fixed inset-0 bg-amber-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -409,11 +508,10 @@ export default function LittleBoxOfGoodies() {
             {/* Washi Tape Header */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-28 h-7 bg-amber-200/80 border border-amber-300 rotate-[-1deg] shadow-sm flex items-center justify-center">
               <span className="text-amber-900/70 text-xs font-serif font-bold uppercase tracking-wider">
-                ITEM {activeItemIndex + 1} OF 8
+                ITEM {activeItemIndex + 1} OF 7
               </span>
             </div>
 
-            {/* Close Button */}
             <button
               onClick={() => setActiveItemIndex(null)}
               className="absolute top-3 right-3 text-amber-900/60 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg transition"
@@ -422,87 +520,91 @@ export default function LittleBoxOfGoodies() {
             </button>
 
             {/* CARD CONTENT TYPES */}
-            <div className="w-full mt-4 min-h-[340px] flex flex-col items-center justify-center text-center">
-              {/* 1. VOICE CASSETTE TAPE */}
+            <div className="w-full mt-4 min-h-[350px] flex flex-col items-center justify-center text-center">
+              {/* 1. VOICE AUDIO SECTION */}
               {goodies[activeItemIndex].type === "voice" && (
                 <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-2">
-                    🎙️ Voice Note Cassette
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    🎙️ Voice Note Section
                   </h3>
-                  <p className="text-amber-800 text-lg mb-4">
-                    Press play to hear your special voice message!
+                  <p className="text-amber-800 text-base mb-3">
+                    Record your real voice or play your saved voice message!
                   </p>
 
-                  {/* Retro Cassette Tape Graphic */}
+                  {/* Retro Cassette Tape */}
                   <div className="w-full bg-[#3a3532] text-amber-100 p-4 rounded-2xl border-4 border-[#252220] shadow-xl relative overflow-hidden my-2">
-                    <div className="bg-[#e6dccb] text-amber-950 p-2 rounded-lg border border-amber-300 flex justify-between items-center text-xs font-mono mb-3">
-                      <span>SIDE A - SPECIAL MESSAGE</span>
-                      <span>60 MIN</span>
+                    <div className="bg-[#e6dccb] text-amber-950 p-2 rounded-lg border border-amber-300 flex justify-between items-center text-xs font-mono mb-2">
+                      <span>SIDE A - VOICE NOTE</span>
+                      <span>{boxData.audioUrl ? "AUDIO READY ✓" : "NO AUDIO YET"}</span>
                     </div>
 
                     <div className="flex justify-center items-center gap-6 my-2">
                       <div
-                        className={`w-14 h-14 rounded-full border-4 border-amber-200/80 flex items-center justify-center ${
-                          cassettePlaying ? "animate-spin" : ""
+                        className={`w-12 h-12 rounded-full border-4 border-amber-200/80 flex items-center justify-center ${
+                          voiceAudioPlaying || isRecording ? "animate-spin" : ""
                         }`}
                         style={{ animationDuration: "3s" }}
                       >
-                        <div className="w-4 h-4 bg-amber-100 rounded-full" />
+                        <div className="w-3.5 h-3.5 bg-amber-100 rounded-full" />
                       </div>
                       <div
-                        className={`w-14 h-14 rounded-full border-4 border-amber-200/80 flex items-center justify-center ${
-                          cassettePlaying ? "animate-spin" : ""
+                        className={`w-12 h-12 rounded-full border-4 border-amber-200/80 flex items-center justify-center ${
+                          voiceAudioPlaying || isRecording ? "animate-spin" : ""
                         }`}
                         style={{ animationDuration: "3s" }}
                       >
-                        <div className="w-4 h-4 bg-amber-100 rounded-full" />
+                        <div className="w-3.5 h-3.5 bg-amber-100 rounded-full" />
                       </div>
                     </div>
+                  </div>
 
-                    {/* Animated Waveform */}
-                    <div className="flex items-center justify-center gap-1 h-6 mt-3">
-                      {[12, 24, 16, 32, 20, 28, 14, 30, 18, 22].map((h, i) => (
-                        <div
-                          key={i}
-                          className="w-1.5 bg-amber-400 rounded-full transition-all duration-300"
-                          style={{
-                            height: cassettePlaying ? `${Math.sin(i + Date.now()/200) * 12 + 16}px` : "6px",
-                          }}
+                  {/* Audio Controls & Microhone Recorder */}
+                  <div className="w-full flex flex-col gap-2 mt-2">
+                    {boxData.audioUrl ? (
+                      <button
+                        onClick={toggleVoicePlayback}
+                        className="w-full bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold text-lg py-2.5 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition"
+                      >
+                        <span>{voiceAudioPlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
+                      </button>
+                    ) : (
+                      <p className="text-amber-700 text-sm font-sans italic">
+                        No voice note recorded yet. Use the record button below or upload an audio file!
+                      </p>
+                    )}
+
+                    <div className="flex gap-2 mt-1">
+                      {isRecording ? (
+                        <button
+                          onClick={stopRecording}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-sm animate-pulse flex items-center justify-center gap-1"
+                        >
+                          ⏹️ Stop Recording ({recordingTime}s)
+                        </button>
+                      ) : (
+                        <button
+                          onClick={startRecording}
+                          className="flex-1 bg-amber-700 hover:bg-amber-800 text-white font-bold py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1"
+                        >
+                          🎙️ Record Voice
+                        </button>
+                      )}
+
+                      <label className="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold py-2 px-3 rounded-xl text-sm cursor-pointer flex items-center justify-center gap-1">
+                        📁 Upload Audio
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleAudioFileUpload}
+                          className="hidden"
                         />
-                      ))}
+                      </label>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => setCassettePlaying(!cassettePlaying)}
-                    className="mt-4 bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold text-xl py-2.5 px-6 rounded-2xl shadow flex items-center gap-2 transition"
-                  >
-                    <span>{cassettePlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
-                  </button>
                 </div>
               )}
 
-              {/* 2. BRACELET */}
-              {goodies[activeItemIndex].type === "bracelet" && (
-                <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-2">
-                    🧵 Friendship Bracelet
-                  </h3>
-                  <div className="w-full bg-amber-50 rounded-2xl p-6 border-2 border-dashed border-amber-300 my-3 flex flex-col items-center">
-                    <div className="flex items-center gap-1 text-3xl tracking-widest my-4 animate-pulse">
-                      💖🧵✨💖🧵✨
-                    </div>
-                    <p className="text-amber-900 text-xl font-serif">
-                      "A thread of friendship that never breaks, no matter the distance."
-                    </p>
-                  </div>
-                  <p className="text-amber-800 text-lg">
-                    Wear this digital reminder whenever you need a smile!
-                  </p>
-                </div>
-              )}
-
-              {/* 3. SECRET NOTE */}
+              {/* 2. SECRET NOTE */}
               {goodies[activeItemIndex].type === "note" && (
                 <div className="w-full flex flex-col items-center">
                   <h3 className="text-2xl font-bold text-amber-950 mb-1">
@@ -517,23 +619,44 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 4. POLAROID PHOTO */}
+              {/* 3. REAL PHOTO MEMORY SECTION */}
               {goodies[activeItemIndex].type === "photo" && (
                 <div className="w-full flex flex-col items-center">
-                  {/* Polaroid Frame */}
-                  <div className="bg-white p-4 pb-6 rounded-xl shadow-xl border border-gray-200 rotate-[-2deg] my-2 max-w-[260px]">
-                    <div className="w-full h-44 bg-gradient-to-tr from-amber-200 via-pink-200 to-red-200 rounded flex items-center justify-center text-6xl shadow-inner">
-                      📸✨
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    📷 Photo Section
+                  </h3>
+
+                  {/* Real Photo Polaroid Frame */}
+                  <div className="bg-white p-3.5 pb-5 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[280px]">
+                    <div className="w-full h-48 sm:h-52 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
+                      <img
+                        src={boxData.photoUrl}
+                        alt="Photo Memory"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
                     </div>
-                    <p className="text-amber-950 text-2xl font-bold mt-3 font-serif">
-                      Precious Memory ❤️
+                    <p className="text-amber-950 text-2xl font-bold mt-2 font-serif">
+                      {boxData.photoCaption}
                     </p>
-                    <span className="text-amber-700 text-sm block">Best Day Ever</span>
                   </div>
+
+                  {/* Photo Uploader */}
+                  <label className="mt-2 bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
+                    📷 Upload Your Photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, "photoUrl")}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               )}
 
-              {/* 5. NEWS FLASH */}
+              {/* 4. NEWS FLASH */}
               {goodies[activeItemIndex].type === "news" && (
                 <div className="w-full flex flex-col items-center">
                   <div className="bg-[#f7f2e9] p-4 rounded-xl border-2 border-amber-900/30 text-amber-950 text-left my-2 shadow-md">
@@ -553,22 +676,44 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 6. LOCATION */}
+              {/* 5. SPOT / LOCATION SECTION */}
               {goodies[activeItemIndex].type === "location" && (
                 <div className="w-full flex flex-col items-center">
-                  <div className="w-full bg-[#fdfaf5] p-5 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
-                    <span className="text-4xl block mb-1">📍</span>
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    📍 Our Spot Section
+                  </h3>
+
+                  <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
+                    {boxData.locationImage && (
+                      <div className="w-full h-36 rounded-xl overflow-hidden mb-3 border border-amber-200">
+                        <img
+                          src={boxData.locationImage}
+                          alt="Our Spot"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <h4 className="text-2xl font-bold text-amber-950">
                       {boxData.locationTitle}
                     </h4>
-                    <p className="text-xl text-amber-800 mt-2">
+                    <p className="text-xl text-amber-800 mt-1">
                       {boxData.locationDesc}
                     </p>
                   </div>
+
+                  <label className="mt-1 bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
+                    🖼️ Upload Spot Photo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, "locationImage")}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               )}
 
-              {/* 7. GIF / HUG */}
+              {/* 6. GIF / HUG */}
               {goodies[activeItemIndex].type === "gif" && (
                 <div className="w-full flex flex-col items-center">
                   <div className="bg-pink-50 p-6 rounded-3xl border-2 border-pink-200 shadow-inner my-2 text-center animate-bounce">
@@ -580,7 +725,7 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 8. COUPONS */}
+              {/* 7. COUPONS */}
               {goodies[activeItemIndex].type === "coupon" && (
                 <div className="w-full flex flex-col items-center gap-2">
                   <h3 className="text-2xl font-bold text-amber-950">
@@ -619,7 +764,7 @@ export default function LittleBoxOfGoodies() {
               )}
             </div>
 
-            {/* Bottom Controls */}
+            {/* Bottom Navigation */}
             <div className="w-full pt-4 border-t border-amber-200/80 flex justify-between items-center mt-2">
               <button
                 onClick={handlePrevCard}
@@ -644,16 +789,16 @@ export default function LittleBoxOfGoodies() {
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-amber-200 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-3xl font-bold text-amber-950 mb-3 font-serif">
-              ✏️ Personalize This Box
+            <h3 className="text-3xl font-bold text-amber-950 mb-2 font-serif">
+              ✏️ Customize Your Goodies Box
             </h3>
-            <p className="text-amber-800 text-base mb-4">
-              Edit the names and messages to make it extra special for your friend!
+            <p className="text-amber-800 text-sm mb-4">
+              Add your real photos, voice audio, spot locations, and personal notes!
             </p>
 
-            <div className="space-y-4 text-left font-sans">
+            <div className="space-y-4 text-left font-sans text-sm">
               <div>
-                <label className="block text-sm font-bold text-amber-900 mb-1">
+                <label className="block font-bold text-amber-900 mb-1">
                   TO (Recipient Name):
                 </label>
                 <input
@@ -665,7 +810,7 @@ export default function LittleBoxOfGoodies() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-amber-900 mb-1">
+                <label className="block font-bold text-amber-900 mb-1">
                   FROM (Your Name):
                 </label>
                 <input
@@ -677,8 +822,47 @@ export default function LittleBoxOfGoodies() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-amber-900 mb-1">
-                  Secret Note Text:
+                <label className="block font-bold text-amber-900 mb-1">
+                  📷 Upload Real Photo Memory:
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handlePhotoUpload(e, "photoUrl")}
+                  className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-amber-50"
+                />
+                <input
+                  type="text"
+                  placeholder="Or paste photo URL..."
+                  value={boxData.photoUrl}
+                  onChange={(e) => setBoxData({ ...boxData, photoUrl: e.target.value })}
+                  className="w-full p-2 mt-1 border border-amber-200 rounded-lg text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-amber-900 mb-1">
+                  📍 Our Spot Title & Memory:
+                </label>
+                <input
+                  type="text"
+                  placeholder="Spot title..."
+                  value={boxData.locationTitle}
+                  onChange={(e) => setBoxData({ ...boxData, locationTitle: e.target.value })}
+                  className="w-full p-2 border border-amber-300 rounded-xl mb-1"
+                />
+                <textarea
+                  rows={2}
+                  placeholder="Spot description..."
+                  value={boxData.locationDesc}
+                  onChange={(e) => setBoxData({ ...boxData, locationDesc: e.target.value })}
+                  className="w-full p-2 border border-amber-300 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-amber-900 mb-1">
+                  📝 Secret Note Message:
                 </label>
                 <textarea
                   rows={3}
@@ -689,8 +873,8 @@ export default function LittleBoxOfGoodies() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-amber-900 mb-1">
-                  Closing Card Text:
+                <label className="block font-bold text-amber-900 mb-1">
+                  💌 Closing Card Text:
                 </label>
                 <textarea
                   rows={2}
