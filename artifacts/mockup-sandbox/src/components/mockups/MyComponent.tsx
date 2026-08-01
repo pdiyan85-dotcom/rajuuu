@@ -1,25 +1,45 @@
 import React, { useState, useEffect, useRef } from "react";
-import couplePhoto from "../../assets/couple-photo.jpg";
 import voiceNote from "../../assets/voice-note.webm";
 
-interface MemoryCard {
+interface GoodieItem {
   id: string;
   title: string;
   subtitle: string;
   icon: string;
-  badge?: string;
 }
 
 export default function EngagementAnniversaryApp() {
   const [screen, setScreen] = useState<number>(1);
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
+  const [voiceAudioPlaying, setVoiceAudioPlaying] = useState<boolean>(false);
+
+  // 24 Reasons
   const [activeReasonIdx, setActiveReasonIdx] = useState<number>(0);
   const [unlockedReasons, setUnlockedReasons] = useState<Set<number>>(new Set([0]));
   const [couponsRedeemed, setCouponsRedeemed] = useState<Record<number, boolean>>({});
 
+  // Live Timer State
+  const [elapsed, setElapsed] = useState({ days: 730, hours: 0, minutes: 0, seconds: 0 });
+
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthIntervalRef = useRef<any>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+
+  // Engagement date: August 6, 2024
+  useEffect(() => {
+    const engagementDate = new Date("2024-08-06T00:00:00").getTime();
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const diff = Math.max(0, now - engagementDate);
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setElapsed({ days, hours, minutes, seconds });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // 24 Reasons for 24 Months of Engagement
   const reasons: string[] = [
@@ -28,7 +48,6 @@ export default function EngagementAnniversaryApp() {
     "You are my happy notification every single time.",
     "How you make every ordinary day feel like magic.",
     "Your golden heart that cares so deeply for everyone.",
-    "The unforgettable memories we made together in Vietnam.",
     "How safe and loved I feel whenever I'm in your arms.",
     "Your contagious laugh that brightens the whole room.",
     "Because you are my soulmate and my best friend.",
@@ -46,6 +65,7 @@ export default function EngagementAnniversaryApp() {
     "Your unconditional love and endless kindness.",
     "Because saying YES to you on August 6, 2024 was the best decision ever.",
     "The beautiful future we are building together day by day.",
+    "How you make my heart skip a beat every time I see you.",
     "Because you are MINE forever and ever! ❤️",
   ];
 
@@ -98,6 +118,22 @@ export default function EngagementAnniversaryApp() {
     };
   }, []);
 
+  // Voice Playback Toggle
+  const toggleVoicePlayback = () => {
+    if (!audioElementRef.current) {
+      audioElementRef.current = new Audio(voiceNote);
+      audioElementRef.current.onended = () => setVoiceAudioPlaying(false);
+    }
+
+    if (voiceAudioPlaying) {
+      audioElementRef.current.pause();
+      setVoiceAudioPlaying(false);
+    } else {
+      audioElementRef.current.play();
+      setVoiceAudioPlaying(true);
+    }
+  };
+
   const handleNextReason = () => {
     const next = (activeReasonIdx + 1) % reasons.length;
     setActiveReasonIdx(next);
@@ -147,11 +183,11 @@ export default function EngagementAnniversaryApp() {
         </button>
       </div>
 
-      {/* Main App Container Container Frame */}
+      {/* Main App Container */}
       <div className="w-full max-w-md bg-[#230d1a]/90 backdrop-blur-md min-h-[660px] sm:min-h-[720px] rounded-3xl shadow-[0_0_50px_rgba(212,175,55,0.15)] border-2 border-amber-400/30 overflow-hidden flex flex-col relative z-10">
         
         {/* ---------------------------------------------------- */}
-        {/* SCREEN 1: HERO ANNIVERSARY UNBOXING / ENVELOPE */}
+        {/* SCREEN 1: HERO UNBOXING ENVELOPE */}
         {/* ---------------------------------------------------- */}
         {screen === 1 && (
           <div className="flex-1 flex flex-col items-center justify-between p-6 text-center z-10 relative">
@@ -167,7 +203,7 @@ export default function EngagementAnniversaryApp() {
               </p>
             </div>
 
-            {/* Anniversary Wax Sealed Envelope / Cardboard Gift */}
+            {/* Anniversary Wax Sealed Envelope */}
             <div className="my-6 relative w-full max-w-[300px]">
               <div
                 onClick={() => setScreen(2)}
@@ -180,7 +216,7 @@ export default function EngagementAnniversaryApp() {
                   </span>
                 </div>
 
-                {/* Wax Sealed Envelope Body */}
+                {/* Envelope Body */}
                 <div className="w-full h-64 bg-gradient-to-b from-[#3a1424] to-[#250d18] rounded-3xl shadow-2xl border-2 border-amber-400/40 p-5 flex flex-col justify-between items-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-[radial-gradient(#d4af37_1px,transparent_0)] bg-[size:16px_16px] opacity-10" />
 
@@ -190,11 +226,11 @@ export default function EngagementAnniversaryApp() {
                     </div>
                     <div className="text-lg font-bold text-rose-100 mt-1">
                       <span className="text-xs text-rose-300 font-sans block">TO:</span>
-                      MINE ❤️
+                      MY FOREVER ❤️
                     </div>
                     <div className="text-sm font-semibold text-rose-200 mt-0.5">
                       <span className="text-xs text-rose-300 font-sans block">FROM:</span>
-                      DIYU ✨
+                      YOUR GIRL ✨
                     </div>
                   </div>
 
@@ -207,27 +243,27 @@ export default function EngagementAnniversaryApp() {
               </div>
             </div>
 
-            {/* Live Relationship Milestone Counter */}
+            {/* Live Relationship Counter */}
             <div className="w-full bg-rose-950/60 rounded-2xl p-3.5 border border-amber-400/20 text-center mb-2">
               <div className="text-xs text-amber-300 uppercase tracking-widest font-mono font-bold mb-1">
                 OUR MILESTONE STATS
               </div>
               <div className="grid grid-cols-4 gap-1 text-center">
                 <div className="bg-rose-900/40 p-1.5 rounded-xl border border-rose-400/10">
-                  <span className="block text-lg font-bold text-amber-200">2</span>
-                  <span className="text-[10px] text-rose-300">Years</span>
-                </div>
-                <div className="bg-rose-900/40 p-1.5 rounded-xl border border-rose-400/10">
-                  <span className="block text-lg font-bold text-amber-200">24</span>
-                  <span className="text-[10px] text-rose-300">Months</span>
-                </div>
-                <div className="bg-rose-900/40 p-1.5 rounded-xl border border-rose-400/10">
-                  <span className="block text-lg font-bold text-amber-200">730</span>
+                  <span className="block text-lg font-bold text-amber-200">{elapsed.days}</span>
                   <span className="text-[10px] text-rose-300">Days</span>
                 </div>
                 <div className="bg-rose-900/40 p-1.5 rounded-xl border border-rose-400/10">
-                  <span className="block text-lg font-bold text-amber-200">17,520</span>
+                  <span className="block text-lg font-bold text-amber-200">{elapsed.hours}</span>
                   <span className="text-[10px] text-rose-300">Hours</span>
+                </div>
+                <div className="bg-rose-900/40 p-1.5 rounded-xl border border-rose-400/10">
+                  <span className="block text-lg font-bold text-amber-200">{elapsed.minutes}</span>
+                  <span className="text-[10px] text-rose-300">Mins</span>
+                </div>
+                <div className="bg-rose-900/40 p-1.5 rounded-xl border border-rose-400/10">
+                  <span className="block text-lg font-bold text-amber-200">{elapsed.seconds}</span>
+                  <span className="text-[10px] text-rose-300">Secs</span>
                 </div>
               </div>
             </div>
@@ -235,27 +271,27 @@ export default function EngagementAnniversaryApp() {
         )}
 
         {/* ---------------------------------------------------- */}
-        {/* SCREEN 2: 2-YEAR SCRAPBOOK & MEMORY MENU GRID */}
+        {/* SCREEN 2: GOODIES & SCRAPBOOK MENU GRID */}
         {/* ---------------------------------------------------- */}
         {screen === 2 && (
           <div className="flex-1 flex flex-col p-4 sm:p-5 z-10 overflow-y-auto">
             <div className="text-center mt-1 mb-3">
               <h2 className="text-3xl font-bold text-amber-200 font-serif">
-                Our 2-Year Scrapbook 📖❤️
+                Your Little Box of Goodies 🎁
               </h2>
               <p className="text-rose-200/80 text-sm mt-0.5">
-                Tap each memory chapter to explore our 2nd Anniversary celebration!
+                Tap each goodie to open the surprise inside 💌
               </p>
             </div>
 
-            {/* Scrapbook Grid */}
+            {/* Goodies Grid */}
             <div className="grid grid-cols-2 gap-3 my-auto py-2">
               {[
-                { id: "letter", title: "Love Letter", icon: "📝", subtitle: "From DIYU to MINE" },
-                { id: "photo", title: "Favourite Shot", icon: "📷", subtitle: "Our Couple Photo" },
-                { id: "spot", title: "Our Spot", icon: "📍", subtitle: "Vietnam Memories" },
+                { id: "letter", title: "Secret Note", icon: "📝", subtitle: "Special Birthday Letter" },
+                { id: "voice", title: "Voice Note", icon: "🎙️", subtitle: "Play Audio Message" },
                 { id: "reasons", title: "24 Reasons", icon: "💖", subtitle: "24 Months of Love" },
-                { id: "gazette", title: "Daily Gazette", icon: "📰", subtitle: "Anniversary Edition" },
+                { id: "timer", title: "Love Stopwatch", icon: "⏳", subtitle: "Live Counter Together" },
+                { id: "hugs", title: "Warm Hugs", icon: "🎀", subtitle: "Infinite Hug" },
                 { id: "coupons", title: "Love Coupons", icon: "🎫", subtitle: "Redeemable Dates" },
               ].map((card) => (
                 <button
@@ -288,7 +324,7 @@ export default function EngagementAnniversaryApp() {
         )}
 
         {/* ---------------------------------------------------- */}
-        {/* SCREEN 3: FINAL CLOSING ANNIVERSARY WISH */}
+        {/* SCREEN 3: FINAL CLOSING WISH */}
         {/* ---------------------------------------------------- */}
         {screen === 3 && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-10 my-auto">
@@ -303,7 +339,7 @@ export default function EngagementAnniversaryApp() {
               </p>
 
               <div className="text-right text-amber-300 font-bold text-lg border-t border-amber-400/20 pt-3">
-                — Forever Yours, DIYU ❤️
+                — Forever Yours, YOUR GIRL ❤️
               </div>
 
               <div className="mt-6 flex flex-col gap-2">
@@ -311,7 +347,7 @@ export default function EngagementAnniversaryApp() {
                   onClick={() => setScreen(2)}
                   className="w-full bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 font-bold py-2.5 px-4 rounded-xl text-sm transition border border-amber-400/30"
                 >
-                  🔄 Explore Scrapbook Again
+                  🔄 Explore Goodies Grid Again
                 </button>
 
                 <button
@@ -340,7 +376,7 @@ export default function EngagementAnniversaryApp() {
               ✕
             </button>
 
-            {/* 1. LOVE LETTER */}
+            {/* 1. SECRET NOTE */}
             {activeCard === "letter" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-3 font-serif">
@@ -348,7 +384,7 @@ export default function EngagementAnniversaryApp() {
                 </h3>
                 <div className="bg-[#1c0914] rounded-2xl p-5 border border-amber-400/30 text-left shadow-inner my-1 w-full">
                   <span className="text-xs text-amber-400 font-mono block mb-2 uppercase tracking-wider">
-                    TO: MINE | FROM: DIYU
+                    TO: MY FOREVER | FROM: YOUR GIRL
                   </span>
                   <p className="text-xl sm:text-2xl text-rose-100 leading-relaxed font-serif">
                     "HEY!,MY FOREVER EVER ,LOVE OF MY LIFE . HAPPIEST BIRTHDAY MY MAN . YOU SEEMS EVEYTHING TO ME I CAN'T IMAGINE EVEN A 1 MICROSECOND WITHOUT YOU. YOU HOLD ME LIKE SOMEONE HOLDING SMALL BABY . YOU ARE MY HAPPY NOTIFICATION. HOPE YOUR EVERYSINGLE DAY FILLED WITH YOUR WISHES AND HAPPNIESS ."
@@ -357,52 +393,52 @@ export default function EngagementAnniversaryApp() {
               </div>
             )}
 
-            {/* 2. FAVOURITE SHOT */}
-            {activeCard === "photo" && (
+            {/* 2. VOICE NOTE */}
+            {activeCard === "voice" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
-                  📷 Our Favourite Shot
+                  🎙️ Voice Note Section
                 </h3>
-                <div className="bg-white p-3 pb-4 rounded-xl shadow-2xl rotate-[-1deg] my-2 w-full max-w-[290px] border border-gray-200">
-                  <div className="w-full h-64 rounded overflow-hidden bg-gray-100 shadow-inner flex items-center justify-center">
-                    <img
-                      src={couplePhoto}
-                      alt="Our Couple Photo"
-                      className="w-full h-full object-cover"
-                    />
+                <p className="text-rose-200/80 text-sm mb-3">
+                  Listen to your special audio message below! ❤️
+                </p>
+
+                <div className="w-full bg-[#3a1424] text-amber-100 p-4 rounded-2xl border border-amber-400/30 shadow-xl my-2">
+                  <div className="bg-[#1c0914] text-amber-200 p-2.5 rounded-lg border border-amber-400/20 flex justify-between items-center text-xs font-mono mb-3">
+                    <span>SIDE A - VOICE NOTE</span>
+                    <span>AUDIO READY ✓</span>
                   </div>
-                  <p className="text-gray-900 text-2xl font-bold mt-2 font-serif">
-                    Our Favorite Shot Together 📸❤️
-                  </p>
+
+                  <div className="flex justify-center items-center gap-6 my-2">
+                    <div
+                      className={`w-12 h-12 rounded-full border-4 border-amber-400/40 flex items-center justify-center ${
+                        voiceAudioPlaying ? "animate-spin" : ""
+                      }`}
+                      style={{ animationDuration: "3s" }}
+                    >
+                      <div className="w-3.5 h-3.5 bg-amber-300 rounded-full" />
+                    </div>
+                    <div
+                      className={`w-12 h-12 rounded-full border-4 border-amber-400/40 flex items-center justify-center ${
+                        voiceAudioPlaying ? "animate-spin" : ""
+                      }`}
+                      style={{ animationDuration: "3s" }}
+                    >
+                      <div className="w-3.5 h-3.5 bg-amber-300 rounded-full" />
+                    </div>
+                  </div>
                 </div>
+
+                <button
+                  onClick={toggleVoicePlayback}
+                  className="w-full mt-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-rose-950 font-bold text-lg py-3 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition"
+                >
+                  <span>{voiceAudioPlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
+                </button>
               </div>
             )}
 
-            {/* 3. OUR SPOT (VIETNAM) */}
-            {activeCard === "spot" && (
-              <div className="w-full text-center flex flex-col items-center">
-                <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
-                  📍 Our Spot (Vietnam)
-                </h3>
-                <div className="w-full bg-[#1c0914] p-4 rounded-2xl border border-amber-400/30 my-2">
-                  <div className="w-full h-44 rounded-xl overflow-hidden mb-3 border border-amber-400/30 shadow">
-                    <img
-                      src={couplePhoto}
-                      alt="Our Spot Vietnam"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <h4 className="text-3xl font-bold text-amber-200 font-serif">
-                    Vietnam 📍
-                  </h4>
-                  <p className="text-lg text-rose-200/90 mt-1 leading-snug">
-                    Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* 4. 24 REASONS WHY I LOVE YOU */}
+            {/* 3. 24 REASONS WHY I LOVE YOU */}
             {activeCard === "reasons" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-1 font-serif">
@@ -438,24 +474,55 @@ export default function EngagementAnniversaryApp() {
               </div>
             )}
 
-            {/* 5. DAILY GAZETTE */}
-            {activeCard === "gazette" && (
+            {/* 4. LIVE LOVE STOPWATCH */}
+            {activeCard === "timer" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
-                  🗞️ The Daily Gazette
+                  ⏳ Our Love Stopwatch
                 </h3>
-                <div className="bg-[#f7f2e9] p-4 rounded-xl border-2 border-amber-900/40 text-amber-950 text-left my-2 shadow-xl w-full">
-                  <div className="border-b-2 border-amber-950 pb-1 mb-2 flex justify-between items-center">
-                    <span className="font-bold text-xs uppercase font-serif tracking-wider">
-                      🗞️ THE DAILY GAZETTE
-                    </span>
-                    <span className="text-[10px]">VOL. 2026</span>
+                <p className="text-xs text-rose-300 mb-3">
+                  Live counter since the day we said YES on August 6, 2024 💍
+                </p>
+
+                <div className="w-full bg-[#1c0914] p-5 rounded-2xl border border-amber-400/30 my-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-rose-950/80 p-3 rounded-xl border border-amber-400/20 text-center">
+                      <span className="block text-3xl font-bold text-amber-300">{elapsed.days}</span>
+                      <span className="text-xs text-rose-300 uppercase tracking-wider">Days Together</span>
+                    </div>
+                    <div className="bg-rose-950/80 p-3 rounded-xl border border-amber-400/20 text-center">
+                      <span className="block text-3xl font-bold text-amber-300">{elapsed.hours}</span>
+                      <span className="text-xs text-rose-300 uppercase tracking-wider">Hours</span>
+                    </div>
+                    <div className="bg-rose-950/80 p-3 rounded-xl border border-amber-400/20 text-center">
+                      <span className="block text-3xl font-bold text-amber-300">{elapsed.minutes}</span>
+                      <span className="text-xs text-rose-300 uppercase tracking-wider">Minutes</span>
+                    </div>
+                    <div className="bg-rose-950/80 p-3 rounded-xl border border-amber-400/20 text-center">
+                      <span className="block text-3xl font-bold text-amber-300">{elapsed.seconds}</span>
+                      <span className="text-xs text-rose-300 uppercase tracking-wider">Seconds</span>
+                    </div>
                   </div>
-                  <h4 className="text-2xl font-bold font-serif leading-tight text-amber-950">
-                    THE DAILY GAZETTE — BREAKING NEWS: You Are Officially The Most Amazing Person Ever Born!
+                  <div className="mt-3 text-xs text-amber-300/80 font-mono italic">
+                    Counting every single second with you... ❤️
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. WARM HUGS */}
+            {activeCard === "hugs" && (
+              <div className="w-full text-center flex flex-col items-center">
+                <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
+                  🎀 Warm Hugs
+                </h3>
+                <div className="w-full bg-gradient-to-b from-pink-950/60 to-rose-950/80 p-6 rounded-3xl border border-pink-400/30 shadow-inner my-2 text-center animate-pulse">
+                  <span className="text-6xl block mb-2">🫂💖✨</span>
+                  <h4 className="text-3xl font-bold text-pink-200 font-serif">
+                    Infinite Warm Hug!
                   </h4>
-                  <p className="text-lg text-amber-900 mt-2 font-sans">
-                    Scientists, psychologists, and friends worldwide confirm that you possess a 100% rare gold heart and bring pure happiness to everyone around you. 📰✨
+                  <p className="text-sm text-pink-300 mt-2 font-sans">
+                    You hold me like someone holding a small baby... Sending you infinite warm hugs today and always! ❤️
                   </p>
                 </div>
               </div>
@@ -505,7 +572,7 @@ export default function EngagementAnniversaryApp() {
                 onClick={() => setActiveCard(null)}
                 className="bg-amber-500 hover:bg-amber-400 text-rose-950 font-bold px-6 py-2 rounded-xl text-sm shadow transition"
               >
-                Close Chapter ✨
+                Close Goodie ✨
               </button>
             </div>
           </div>
