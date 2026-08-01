@@ -52,7 +52,17 @@ export default function LittleBoxOfGoodies() {
   const [boxData, setBoxData] = useState<BoxData>(() => {
     try {
       const saved = localStorage.getItem("goodies_box_data");
-      return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : DEFAULT_DATA;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...DEFAULT_DATA,
+          ...parsed,
+          photoUrl: parsed.photoUrl && !parsed.photoUrl.includes("unsplash") ? parsed.photoUrl : "/couple-photo.jpg",
+          locationImage: parsed.locationImage && !parsed.locationImage.includes("unsplash") ? parsed.locationImage : "/couple-photo.jpg",
+          locationTitle: parsed.locationTitle || "Vietnam 📍",
+        };
+      }
+      return DEFAULT_DATA;
     } catch {
       return DEFAULT_DATA;
     }
