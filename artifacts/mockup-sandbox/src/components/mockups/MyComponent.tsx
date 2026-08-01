@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import voiceNote from "../../assets/voice-note.webm";
 
 interface GoodieItem {
   id: string;
@@ -12,7 +11,6 @@ export default function EngagementAnniversaryApp() {
   const [screen, setScreen] = useState<number>(1);
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
-  const [voiceAudioPlaying, setVoiceAudioPlaying] = useState<boolean>(false);
 
   // 24 Reasons
   const [activeReasonIdx, setActiveReasonIdx] = useState<number>(0);
@@ -24,7 +22,6 @@ export default function EngagementAnniversaryApp() {
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthIntervalRef = useRef<any>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
   // Engagement date: August 6, 2024
   useEffect(() => {
@@ -117,22 +114,6 @@ export default function EngagementAnniversaryApp() {
       if (audioCtxRef.current) audioCtxRef.current.close();
     };
   }, []);
-
-  // Voice Playback Toggle
-  const toggleVoicePlayback = () => {
-    if (!audioElementRef.current) {
-      audioElementRef.current = new Audio(voiceNote);
-      audioElementRef.current.onended = () => setVoiceAudioPlaying(false);
-    }
-
-    if (voiceAudioPlaying) {
-      audioElementRef.current.pause();
-      setVoiceAudioPlaying(false);
-    } else {
-      audioElementRef.current.play();
-      setVoiceAudioPlaying(true);
-    }
-  };
 
   const handleNextReason = () => {
     const next = (activeReasonIdx + 1) % reasons.length;
@@ -284,11 +265,10 @@ export default function EngagementAnniversaryApp() {
               </p>
             </div>
 
-            {/* Goodies Grid */}
+            {/* Goodies Grid (5 Items) */}
             <div className="grid grid-cols-2 gap-3 my-auto py-2">
               {[
                 { id: "letter", title: "Secret Note", icon: "📝", subtitle: "Special Birthday Letter" },
-                { id: "voice", title: "Voice Note", icon: "🎙️", subtitle: "Play Audio Message" },
                 { id: "reasons", title: "24 Reasons", icon: "💖", subtitle: "24 Months of Love" },
                 { id: "timer", title: "Love Stopwatch", icon: "⏳", subtitle: "Live Counter Together" },
                 { id: "hugs", title: "Warm Hugs", icon: "🎀", subtitle: "Infinite Hug" },
@@ -393,52 +373,7 @@ export default function EngagementAnniversaryApp() {
               </div>
             )}
 
-            {/* 2. VOICE NOTE */}
-            {activeCard === "voice" && (
-              <div className="w-full text-center flex flex-col items-center">
-                <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
-                  🎙️ Voice Note Section
-                </h3>
-                <p className="text-rose-200/80 text-sm mb-3">
-                  Listen to your special audio message below! ❤️
-                </p>
-
-                <div className="w-full bg-[#3a1424] text-amber-100 p-4 rounded-2xl border border-amber-400/30 shadow-xl my-2">
-                  <div className="bg-[#1c0914] text-amber-200 p-2.5 rounded-lg border border-amber-400/20 flex justify-between items-center text-xs font-mono mb-3">
-                    <span>SIDE A - VOICE NOTE</span>
-                    <span>AUDIO READY ✓</span>
-                  </div>
-
-                  <div className="flex justify-center items-center gap-6 my-2">
-                    <div
-                      className={`w-12 h-12 rounded-full border-4 border-amber-400/40 flex items-center justify-center ${
-                        voiceAudioPlaying ? "animate-spin" : ""
-                      }`}
-                      style={{ animationDuration: "3s" }}
-                    >
-                      <div className="w-3.5 h-3.5 bg-amber-300 rounded-full" />
-                    </div>
-                    <div
-                      className={`w-12 h-12 rounded-full border-4 border-amber-400/40 flex items-center justify-center ${
-                        voiceAudioPlaying ? "animate-spin" : ""
-                      }`}
-                      style={{ animationDuration: "3s" }}
-                    >
-                      <div className="w-3.5 h-3.5 bg-amber-300 rounded-full" />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={toggleVoicePlayback}
-                  className="w-full mt-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-rose-950 font-bold text-lg py-3 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition"
-                >
-                  <span>{voiceAudioPlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
-                </button>
-              </div>
-            )}
-
-            {/* 3. 24 REASONS WHY I LOVE YOU */}
+            {/* 2. 24 REASONS WHY I LOVE YOU */}
             {activeCard === "reasons" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-1 font-serif">
@@ -474,7 +409,7 @@ export default function EngagementAnniversaryApp() {
               </div>
             )}
 
-            {/* 4. LIVE LOVE STOPWATCH */}
+            {/* 3. LIVE LOVE STOPWATCH */}
             {activeCard === "timer" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
@@ -510,7 +445,7 @@ export default function EngagementAnniversaryApp() {
               </div>
             )}
 
-            {/* 5. WARM HUGS */}
+            {/* 4. WARM HUGS */}
             {activeCard === "hugs" && (
               <div className="w-full text-center flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-amber-200 mb-2 font-serif">
@@ -528,7 +463,7 @@ export default function EngagementAnniversaryApp() {
               </div>
             )}
 
-            {/* 6. LOVE COUPONS */}
+            {/* 5. LOVE COUPONS */}
             {activeCard === "coupons" && (
               <div className="w-full text-center flex flex-col items-center gap-2">
                 <h3 className="text-2xl font-bold text-amber-200 mb-1 font-serif">
