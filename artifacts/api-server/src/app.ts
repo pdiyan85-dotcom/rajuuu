@@ -4,7 +4,7 @@ import pinoHttp from "pino-http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 
-const app: Express = express();
+const app: any = express();
 app.use(cors());
 app.use(
   (pinoHttp as any)({
@@ -29,7 +29,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (_req, res) => {
+app.get("/", (_req: any, res: any) => {
   res.send(`
     <!DOCTYPE html>
     <html>
