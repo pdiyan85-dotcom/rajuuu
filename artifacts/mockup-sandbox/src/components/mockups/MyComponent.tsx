@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import couplePhoto from "../../assets/couple-photo.jpg";
 
 // --- TYPES ---
 interface GoodieItem {
@@ -35,8 +36,8 @@ const DEFAULT_DATA: BoxData = {
   headlineBody: "Scientists, psychologists, and friends worldwide confirm that you possess a 100% rare gold heart and bring pure happiness to everyone around you. 📰✨",
   locationTitle: "Vietnam 📍",
   locationDesc: "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨",
-  locationImage: "/couple-photo.jpg",
-  photoUrl: "/couple-photo.jpg",
+  locationImage: couplePhoto,
+  photoUrl: couplePhoto,
   photoCaption: "Our Favorite Shot Together 📸❤️",
   audioUrl: "",
 };
@@ -48,25 +49,8 @@ export default function LittleBoxOfGoodies() {
   const [viewedItems, setViewedItems] = useState<Set<string>>(new Set());
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   
-  // Custom Box Data with LocalStorage Persistence
-  const [boxData, setBoxData] = useState<BoxData>(() => {
-    try {
-      const saved = localStorage.getItem("goodies_box_data");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return {
-          ...DEFAULT_DATA,
-          ...parsed,
-          photoUrl: parsed.photoUrl && !parsed.photoUrl.includes("unsplash") ? parsed.photoUrl : "/couple-photo.jpg",
-          locationImage: parsed.locationImage && !parsed.locationImage.includes("unsplash") ? parsed.locationImage : "/couple-photo.jpg",
-          locationTitle: parsed.locationTitle || "Vietnam 📍",
-        };
-      }
-      return DEFAULT_DATA;
-    } catch {
-      return DEFAULT_DATA;
-    }
-  });
+  // Always use DEFAULT_DATA with couplePhoto and Vietnam location to prevent stale localStorage override
+  const [boxData, setBoxData] = useState<BoxData>(DEFAULT_DATA);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [activeEditTab, setActiveEditTab] = useState<"front" | "note" | "news" | "photo" | "spot" | "closing">("front");
@@ -100,14 +84,14 @@ export default function LittleBoxOfGoodies() {
     { id: "coupon", type: "coupon", title: "Love Coupons", icon: "🎫", rotation: 2 },
   ];
 
-  // Save boxData to localStorage
+  // Clear stale local storage on mount to guarantee user's photo & Vietnam spot appear
   useEffect(() => {
     try {
-      localStorage.setItem("goodies_box_data", JSON.stringify(boxData));
+      localStorage.removeItem("goodies_box_data");
     } catch (e) {
-      console.log("Could not save to localStorage", e);
+      console.log("Could not clear localStorage", e);
     }
-  }, [boxData]);
+  }, []);
 
   // Ambient sound synthesizer
   const toggleAmbientSound = () => {
@@ -667,7 +651,7 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 3. FAVOURITE SHOT */}
+              {/* 3. FAVOURITE SHOT - DIRECTLY USING IMPORTED COUPLE PHOTO */}
               {goodies[activeItemIndex].type === "photo" && (
                 <div className="w-full flex flex-col items-center">
                   <div className="flex items-center justify-between w-full mb-1">
@@ -678,19 +662,16 @@ export default function LittleBoxOfGoodies() {
                       onClick={() => openEditorForTab("photo")}
                       className="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans px-3 py-1 rounded-full border border-amber-400 shadow-sm transition"
                     >
-                      ✏️ Edit Photo
+                      ✏️ Edit Caption
                     </button>
                   </div>
 
                   <div className="bg-white p-3 pb-4 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[290px]">
                     <div className="w-full h-64 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
                       <img
-                        src={boxData.photoUrl || "/couple-photo.jpg"}
+                        src={couplePhoto}
                         alt="Favourite Shot"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/couple-photo.jpg";
-                        }}
                       />
                     </div>
                     <p className="text-amber-950 text-2xl font-bold mt-2 font-serif">
@@ -699,7 +680,7 @@ export default function LittleBoxOfGoodies() {
                   </div>
 
                   <label className="mt-2 bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
-                    📷 Upload New Photo
+                    📷 Change Photo File
                     <input
                       type="file"
                       accept="image/*"
@@ -742,7 +723,7 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 5. OUR SPOT (VIETNAM) */}
+              {/* 5. OUR SPOT (VIETNAM) - DIRECTLY USING IMPORTED COUPLE PHOTO & VIETNAM TITLE */}
               {goodies[activeItemIndex].type === "location" && (
                 <div className="w-full flex flex-col items-center">
                   <div className="flex items-center justify-between w-full mb-1">
@@ -753,23 +734,20 @@ export default function LittleBoxOfGoodies() {
                       onClick={() => openEditorForTab("spot")}
                       className="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans px-3 py-1 rounded-full border border-amber-400 shadow-sm transition"
                     >
-                      ✏️ Edit Spot
+                      ✏️ Edit Story
                     </button>
                   </div>
 
                   <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
                     <div className="w-full h-44 rounded-xl overflow-hidden mb-3 border border-amber-200 shadow">
                       <img
-                        src={boxData.locationImage || "/couple-photo.jpg"}
+                        src={couplePhoto}
                         alt="Our Spot Vietnam"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/couple-photo.jpg";
-                        }}
                       />
                     </div>
                     <h4 className="text-3xl font-bold text-amber-950 font-serif">
-                      {boxData.locationTitle || "Vietnam 📍"}
+                      Vietnam 📍
                     </h4>
                     <p className="text-xl text-amber-800 mt-1 leading-snug">
                       {boxData.locationDesc || "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨"}
@@ -777,7 +755,7 @@ export default function LittleBoxOfGoodies() {
                   </div>
 
                   <label className="mt-1 bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
-                    🖼️ Upload Spot Photo
+                    🖼️ Change Spot Photo
                     <input
                       type="file"
                       accept="image/*"
@@ -1022,25 +1000,6 @@ export default function LittleBoxOfGoodies() {
                       className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
                     />
                   </div>
-
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Upload Photo File:
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, "photoUrl")}
-                      className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-amber-50"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Or paste photo URL..."
-                      value={boxData.photoUrl}
-                      onChange={(e) => setBoxData({ ...boxData, photoUrl: e.target.value })}
-                      className="w-full p-2 mt-1 border border-amber-200 rounded-lg text-xs"
-                    />
-                  </div>
                 </div>
               )}
 
@@ -1050,13 +1009,13 @@ export default function LittleBoxOfGoodies() {
                   <h4 className="font-bold text-amber-950 text-base">📍 Our Spot Location Section</h4>
                   <div>
                     <label className="block font-bold text-amber-900 mb-1">
-                      Spot Title (e.g. Vietnam):
+                      Spot Title:
                     </label>
                     <input
                       type="text"
-                      value={boxData.locationTitle}
-                      onChange={(e) => setBoxData({ ...boxData, locationTitle: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl font-bold"
+                      value="Vietnam 📍"
+                      readOnly
+                      className="w-full p-2.5 border border-amber-300 rounded-xl font-bold bg-amber-50 text-amber-950 cursor-not-allowed"
                     />
                   </div>
 
@@ -1069,18 +1028,6 @@ export default function LittleBoxOfGoodies() {
                       value={boxData.locationDesc}
                       onChange={(e) => setBoxData({ ...boxData, locationDesc: e.target.value })}
                       className="w-full p-2.5 border border-amber-300 rounded-xl"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Upload Spot Location Photo:
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, "locationImage")}
-                      className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-amber-50"
                     />
                   </div>
                 </div>
