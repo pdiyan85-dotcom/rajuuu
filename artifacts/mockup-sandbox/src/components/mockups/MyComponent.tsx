@@ -26,7 +26,7 @@ interface BoxData {
   audioUrl: string;
 }
 
-const DEFAULT_DATA: BoxData = {
+const HARDCODED_DATA: BoxData = {
   toName: "MY FOREVER",
   fromName: "YOUR GIRL",
   noteText:
@@ -49,23 +49,11 @@ export default function LittleBoxOfGoodies() {
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [viewedItems, setViewedItems] = useState<Set<string>>(new Set());
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
-  
-  // Always use DEFAULT_DATA with couplePhoto and Vietnam location to prevent stale localStorage override
-  const [boxData, setBoxData] = useState<BoxData>(DEFAULT_DATA);
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [activeEditTab, setActiveEditTab] = useState<"front" | "note" | "news" | "photo" | "spot" | "closing">("front");
-
-  // Audio Recording & Playback State
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [recordingTime, setRecordingTime] = useState<number>(0);
   const [voiceAudioPlaying, setVoiceAudioPlaying] = useState<boolean>(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const recordingTimerRef = useRef<any>(null);
 
-  // Coupons
+  // Coupons state
   const [couponsRedeemed, setCouponsRedeemed] = useState<Record<number, boolean>>({
     0: false,
     1: false,
@@ -85,16 +73,7 @@ export default function LittleBoxOfGoodies() {
     { id: "coupon", type: "coupon", title: "Love Coupons", icon: "🎫", rotation: 2 },
   ];
 
-  // Clear stale local storage on mount to guarantee user's photo & Vietnam spot appear
-  useEffect(() => {
-    try {
-      localStorage.removeItem("goodies_box_data");
-    } catch (e) {
-      console.log("Could not clear localStorage", e);
-    }
-  }, []);
-
-  // Ambient sound synthesizer
+  // Ambient sound synthesizer toggle
   const toggleAmbientSound = () => {
     if (isAudioPlaying) {
       if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
@@ -143,51 +122,10 @@ export default function LittleBoxOfGoodies() {
     };
   }, []);
 
-  // Voice Recording Functions
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        setBoxData((prev) => ({ ...prev, audioUrl }));
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-    } catch (err) {
-      alert("Microphone access is required to record voice notes. Please grant microphone permission!");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-    }
-  };
-
   // Voice Playback Toggle
   const toggleVoicePlayback = () => {
-    if (!boxData.audioUrl) return;
-
     if (!audioElementRef.current) {
-      audioElementRef.current = new Audio(boxData.audioUrl);
+      audioElementRef.current = new Audio(HARDCODED_DATA.audioUrl);
       audioElementRef.current.onended = () => setVoiceAudioPlaying(false);
     }
 
@@ -197,30 +135,6 @@ export default function LittleBoxOfGoodies() {
     } else {
       audioElementRef.current.play();
       setVoiceAudioPlaying(true);
-    }
-  };
-
-  // Image Upload Handler
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, key: "photoUrl" | "locationImage") => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBoxData((prev) => ({ ...prev, [key]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Audio File Upload Handler
-  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBoxData((prev) => ({ ...prev, audioUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -252,11 +166,6 @@ export default function LittleBoxOfGoodies() {
     }
   };
 
-  const openEditorForTab = (tab: "front" | "note" | "news" | "photo" | "spot" | "closing") => {
-    setActiveEditTab(tab);
-    setIsEditModalOpen(true);
-  };
-
   return (
     <div
       className="min-h-screen font-sans select-none flex flex-col items-center justify-center p-3 sm:p-6"
@@ -267,7 +176,7 @@ export default function LittleBoxOfGoodies() {
         fontFamily: "'Caveat', cursive, 'Outfit', sans-serif",
       }}
     >
-      {/* Top Floating Controls - ALWAYS VISIBLE EDIT BUTTON ON EVERY PAGE */}
+      {/* Top Floating Music Control */}
       <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center gap-2">
         <button
           onClick={toggleAmbientSound}
@@ -278,14 +187,6 @@ export default function LittleBoxOfGoodies() {
           <span className="font-semibold text-xs sm:text-sm hidden xs:inline">
             {isAudioPlaying ? "Lofi Music ON" : "Music OFF"}
           </span>
-        </button>
-
-        <button
-          onClick={() => openEditorForTab("front")}
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-lg flex items-center gap-1.5 transition transform hover:scale-105"
-          title="Edit Anything On Every Page"
-        >
-          ✏️ <span>EDIT PAGE / SECTIONS</span>
         </button>
       </div>
 
@@ -341,11 +242,11 @@ export default function LittleBoxOfGoodies() {
                         </span>
                         <div className="mt-2 text-sm sm:text-base font-semibold text-amber-950 leading-tight">
                           <span className="text-xs text-amber-700 font-sans block">TO:</span>
-                          {boxData.toName}
+                          {HARDCODED_DATA.toName}
                         </div>
                         <div className="mt-1 text-xs sm:text-sm text-amber-900">
                           <span className="text-[10px] text-amber-700 font-sans block">FROM:</span>
-                          {boxData.fromName}
+                          {HARDCODED_DATA.fromName}
                         </div>
                       </div>
 
@@ -374,17 +275,6 @@ export default function LittleBoxOfGoodies() {
                   </div>
                 </div>
               </div>
-
-              {/* Direct Edit Button on Screen 1 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openEditorForTab("front");
-                }}
-                className="mt-3 bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans py-1.5 px-3.5 rounded-full border border-amber-400 shadow transition inline-flex items-center gap-1"
-              >
-                ✏️ Edit Shipping Label (TO & FROM)
-              </button>
             </div>
 
             <div className="mb-4">
@@ -401,17 +291,9 @@ export default function LittleBoxOfGoodies() {
         {screen === 2 && (
           <div className="flex-1 flex flex-col p-4 sm:p-6 z-10 overflow-y-auto">
             <div className="text-center mt-1 mb-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-3xl sm:text-4xl font-bold text-amber-950 font-serif">
-                  your little box of goodies
-                </h2>
-                <button
-                  onClick={() => openEditorForTab("front")}
-                  className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold font-sans px-2.5 py-1 rounded-full border border-amber-300 transition"
-                >
-                  ✏️ Edit
-                </button>
-              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-amber-950 font-serif">
+                your little box of goodies
+              </h2>
               <p className="text-amber-800/80 text-lg mt-0.5">
                 Tap each item to unwrap the surprise inside 💌
               </p>
@@ -484,20 +366,12 @@ export default function LittleBoxOfGoodies() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-6 bg-red-100/80 border border-red-200 rotate-1 shadow-sm" />
 
               <span className="text-4xl sm:text-5xl block mb-2">🎁✨</span>
-              <div className="flex items-center justify-center gap-2">
-                <h2 className="text-3xl sm:text-4xl font-bold text-amber-950 mb-1 font-serif">
-                  and little goodies ❤️
-                </h2>
-                <button
-                  onClick={() => openEditorForTab("closing")}
-                  className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold font-sans px-2.5 py-1 rounded-full border border-amber-300 transition"
-                >
-                  ✏️ Edit
-                </button>
-              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-amber-950 mb-1 font-serif">
+                and little goodies ❤️
+              </h2>
 
               <p className="text-2xl sm:text-3xl text-amber-900 leading-relaxed my-4 font-normal">
-                "{boxData.closingText}"
+                "{HARDCODED_DATA.closingText}"
               </p>
 
               <div className="my-4 pt-4 border-t border-amber-200/80 flex flex-col gap-2">
@@ -554,19 +428,19 @@ export default function LittleBoxOfGoodies() {
                     🎙️ Voice Note Section
                   </h3>
                   <p className="text-amber-800 text-base mb-3">
-                    Record your real voice or play your saved voice message!
+                    Listen to your special audio message below! ❤️
                   </p>
 
                   <div className="w-full bg-[#3a3532] text-amber-100 p-4 rounded-2xl border-4 border-[#252220] shadow-xl relative overflow-hidden my-2">
                     <div className="bg-[#e6dccb] text-amber-950 p-2 rounded-lg border border-amber-300 flex justify-between items-center text-xs font-mono mb-2">
                       <span>SIDE A - VOICE NOTE</span>
-                      <span>{boxData.audioUrl ? "AUDIO READY ✓" : "SPECIAL MESSAGE"}</span>
+                      <span>AUDIO READY ✓</span>
                     </div>
 
                     <div className="flex justify-center items-center gap-6 my-2">
                       <div
                         className={`w-12 h-12 rounded-full border-4 border-amber-200/80 flex items-center justify-center ${
-                          voiceAudioPlaying || isRecording ? "animate-spin" : ""
+                          voiceAudioPlaying ? "animate-spin" : ""
                         }`}
                         style={{ animationDuration: "3s" }}
                       >
@@ -574,7 +448,7 @@ export default function LittleBoxOfGoodies() {
                       </div>
                       <div
                         className={`w-12 h-12 rounded-full border-4 border-amber-200/80 flex items-center justify-center ${
-                          voiceAudioPlaying || isRecording ? "animate-spin" : ""
+                          voiceAudioPlaying ? "animate-spin" : ""
                         }`}
                         style={{ animationDuration: "3s" }}
                       >
@@ -584,46 +458,12 @@ export default function LittleBoxOfGoodies() {
                   </div>
 
                   <div className="w-full flex flex-col gap-2 mt-2">
-                    {boxData.audioUrl ? (
-                      <button
-                        onClick={toggleVoicePlayback}
-                        className="w-full bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold text-lg py-2.5 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition"
-                      >
-                        <span>{voiceAudioPlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
-                      </button>
-                    ) : (
-                      <p className="text-amber-700 text-sm font-sans italic">
-                        No voice note recorded yet. Use the buttons below!
-                      </p>
-                    )}
-
-                    <div className="flex gap-2 mt-1">
-                      {isRecording ? (
-                        <button
-                          onClick={stopRecording}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-xl text-sm animate-pulse flex items-center justify-center gap-1"
-                        >
-                          ⏹️ Stop Recording ({recordingTime}s)
-                        </button>
-                      ) : (
-                        <button
-                          onClick={startRecording}
-                          className="flex-1 bg-amber-700 hover:bg-amber-800 text-white font-bold py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1"
-                        >
-                          🎙️ Record Voice
-                        </button>
-                      )}
-
-                      <label className="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold py-2 px-3 rounded-xl text-sm cursor-pointer flex items-center justify-center gap-1">
-                        📁 Upload Audio
-                        <input
-                          type="file"
-                          accept="audio/*"
-                          onChange={handleAudioFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
+                    <button
+                      onClick={toggleVoicePlayback}
+                      className="w-full bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold text-lg py-3 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition"
+                    >
+                      <span>{voiceAudioPlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -631,41 +471,25 @@ export default function LittleBoxOfGoodies() {
               {/* 2. SECRET NOTE FOR YOU */}
               {goodies[activeItemIndex].type === "note" && (
                 <div className="w-full flex flex-col items-center">
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <h3 className="text-2xl font-bold text-amber-950">
-                      📝 A Secret Note For You
-                    </h3>
-                    <button
-                      onClick={() => openEditorForTab("note")}
-                      className="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans px-3 py-1 rounded-full border border-amber-400 shadow-sm transition"
-                    >
-                      ✏️ Edit Note
-                    </button>
-                  </div>
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    📝 A Secret Note For You
+                  </h3>
 
                   <div className="w-full bg-[#fcf8f2] rounded-2xl p-5 border-2 border-amber-200 shadow-inner my-2 text-left relative">
                     <span className="absolute top-2 right-2 text-xl">✨</span>
                     <p className="text-2xl text-amber-900 leading-relaxed font-normal">
-                      "{boxData.noteText}"
+                      "{HARDCODED_DATA.noteText}"
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* 3. FAVOURITE SHOT - DIRECTLY USING IMPORTED COUPLE PHOTO */}
+              {/* 3. FAVOURITE SHOT */}
               {goodies[activeItemIndex].type === "photo" && (
                 <div className="w-full flex flex-col items-center">
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <h3 className="text-2xl font-bold text-amber-950">
-                      📷 Favourite Shot
-                    </h3>
-                    <button
-                      onClick={() => openEditorForTab("photo")}
-                      className="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans px-3 py-1 rounded-full border border-amber-400 shadow-sm transition"
-                    >
-                      ✏️ Edit Caption
-                    </button>
-                  </div>
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    📷 Favourite Shot
+                  </h3>
 
                   <div className="bg-white p-3 pb-4 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[290px]">
                     <div className="w-full h-64 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
@@ -676,36 +500,18 @@ export default function LittleBoxOfGoodies() {
                       />
                     </div>
                     <p className="text-amber-950 text-2xl font-bold mt-2 font-serif">
-                      {boxData.photoCaption || "Our Favorite Shot Together 📸❤️"}
+                      {HARDCODED_DATA.photoCaption}
                     </p>
                   </div>
-
-                  <label className="mt-2 bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
-                    📷 Change Photo File
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, "photoUrl")}
-                      className="hidden"
-                    />
-                  </label>
                 </div>
               )}
 
               {/* 4. THE DAILY GAZETTE */}
               {goodies[activeItemIndex].type === "news" && (
                 <div className="w-full flex flex-col items-center">
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <h3 className="text-2xl font-bold text-amber-950">
-                      🗞️ The Daily Gazette
-                    </h3>
-                    <button
-                      onClick={() => openEditorForTab("news")}
-                      className="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans px-3 py-1 rounded-full border border-amber-400 shadow-sm transition"
-                    >
-                      ✏️ Edit Gazette
-                    </button>
-                  </div>
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    🗞️ The Daily Gazette
+                  </h3>
 
                   <div className="bg-[#f7f2e9] p-4 rounded-xl border-2 border-amber-900/30 text-amber-950 text-left my-2 shadow-md w-full">
                     <div className="border-b-2 border-amber-950 pb-1 mb-2 flex justify-between items-center">
@@ -715,29 +521,21 @@ export default function LittleBoxOfGoodies() {
                       <span className="text-[10px]">VOL. 2026</span>
                     </div>
                     <h4 className="text-2xl font-bold font-serif leading-tight">
-                      {boxData.headlineText}
+                      {HARDCODED_DATA.headlineText}
                     </h4>
                     <p className="text-lg text-amber-900 mt-2 font-sans">
-                      {boxData.headlineBody}
+                      {HARDCODED_DATA.headlineBody}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* 5. OUR SPOT (VIETNAM) - DIRECTLY USING IMPORTED COUPLE PHOTO & VIETNAM TITLE */}
+              {/* 5. OUR SPOT (VIETNAM) */}
               {goodies[activeItemIndex].type === "location" && (
                 <div className="w-full flex flex-col items-center">
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <h3 className="text-2xl font-bold text-amber-950">
-                      📍 Our Spot (Vietnam)
-                    </h3>
-                    <button
-                      onClick={() => openEditorForTab("spot")}
-                      className="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold font-sans px-3 py-1 rounded-full border border-amber-400 shadow-sm transition"
-                    >
-                      ✏️ Edit Story
-                    </button>
-                  </div>
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    📍 Our Spot (Vietnam)
+                  </h3>
 
                   <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
                     <div className="w-full h-44 rounded-xl overflow-hidden mb-3 border border-amber-200 shadow">
@@ -751,19 +549,9 @@ export default function LittleBoxOfGoodies() {
                       Vietnam 📍
                     </h4>
                     <p className="text-xl text-amber-800 mt-1 leading-snug">
-                      {boxData.locationDesc || "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨"}
+                      {HARDCODED_DATA.locationDesc}
                     </p>
                   </div>
-
-                  <label className="mt-1 bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
-                    🖼️ Change Spot Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, "locationImage")}
-                      className="hidden"
-                    />
-                  </label>
                 </div>
               )}
 
@@ -831,234 +619,6 @@ export default function LittleBoxOfGoodies() {
                 className="bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold px-4 py-2 rounded-xl text-base transition"
               >
                 Next ➡️
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* MULTI-TAB EDIT & PERSONALIZE MODAL */}
-      {/* ---------------------------------------------------- */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border-4 border-amber-200 max-h-[90vh] overflow-y-auto flex flex-col">
-            <div className="flex items-center justify-between border-b pb-3 mb-3">
-              <h3 className="text-2xl sm:text-3xl font-bold text-amber-950 font-serif">
-                ✏️ Edit Any Section
-              </h3>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-amber-950 hover:bg-amber-100 w-8 h-8 rounded-full font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Editor Tabs Navigation */}
-            <div className="flex gap-1 bg-amber-100/80 p-1 rounded-xl mb-4 overflow-x-auto text-xs font-sans font-bold text-amber-900">
-              <button
-                onClick={() => setActiveEditTab("front")}
-                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
-                  activeEditTab === "front" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
-                }`}
-              >
-                📦 Front Label
-              </button>
-              <button
-                onClick={() => setActiveEditTab("note")}
-                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
-                  activeEditTab === "note" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
-                }`}
-              >
-                📝 Secret Note
-              </button>
-              <button
-                onClick={() => setActiveEditTab("news")}
-                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
-                  activeEditTab === "news" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
-                }`}
-              >
-                🗞️ Gazette
-              </button>
-              <button
-                onClick={() => setActiveEditTab("photo")}
-                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
-                  activeEditTab === "photo" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
-                }`}
-              >
-                📷 Photo
-              </button>
-              <button
-                onClick={() => setActiveEditTab("spot")}
-                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
-                  activeEditTab === "spot" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
-                }`}
-              >
-                📍 Spot
-              </button>
-              <button
-                onClick={() => setActiveEditTab("closing")}
-                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
-                  activeEditTab === "closing" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
-                }`}
-              >
-                💌 Closing
-              </button>
-            </div>
-
-            <div className="space-y-4 text-left font-sans text-sm flex-1">
-              {/* TAB 1: FRONT PAGE SHIPPING LABEL */}
-              {activeEditTab === "front" && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-amber-950 text-base">📦 Front Page Shipping Label</h4>
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      TO: (Recipient Name on Front Page):
-                    </label>
-                    <input
-                      type="text"
-                      value={boxData.toName}
-                      onChange={(e) => setBoxData({ ...boxData, toName: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      FROM: (Your Sender Name on Front Page):
-                    </label>
-                    <input
-                      type="text"
-                      value={boxData.fromName}
-                      onChange={(e) => setBoxData({ ...boxData, fromName: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: SECRET NOTE */}
-              {activeEditTab === "note" && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-amber-950 text-base">📝 Secret Note Content</h4>
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Secret Note Message:
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={boxData.noteText}
-                      onChange={(e) => setBoxData({ ...boxData, noteText: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-base"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: DAILY GAZETTE */}
-              {activeEditTab === "news" && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-amber-950 text-base">🗞️ Daily Gazette Newspaper Clipping</h4>
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Headline Title:
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={boxData.headlineText}
-                      onChange={(e) => setBoxData({ ...boxData, headlineText: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-serif font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Newspaper Article Story:
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={boxData.headlineBody}
-                      onChange={(e) => setBoxData({ ...boxData, headlineBody: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: FAVOURITE SHOT PHOTO */}
-              {activeEditTab === "photo" && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-amber-950 text-base">📷 Favourite Shot Photo Section</h4>
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Photo Caption:
-                    </label>
-                    <input
-                      type="text"
-                      value={boxData.photoCaption}
-                      onChange={(e) => setBoxData({ ...boxData, photoCaption: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 5: OUR SPOT */}
-              {activeEditTab === "spot" && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-amber-950 text-base">📍 Our Spot Location Section</h4>
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Spot Title:
-                    </label>
-                    <input
-                      type="text"
-                      value="Vietnam 📍"
-                      readOnly
-                      className="w-full p-2.5 border border-amber-300 rounded-xl font-bold bg-amber-50 text-amber-950 cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Spot Story / Memory Description:
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={boxData.locationDesc}
-                      onChange={(e) => setBoxData({ ...boxData, locationDesc: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 6: CLOSING NOTE */}
-              {activeEditTab === "closing" && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-amber-950 text-base">💌 Final Closing Card Message</h4>
-                  <div>
-                    <label className="block font-bold text-amber-900 mb-1">
-                      Closing Card Text:
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={boxData.closingText}
-                      onChange={(e) => setBoxData({ ...boxData, closingText: e.target.value })}
-                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-base"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 border-t pt-3 flex justify-end gap-2">
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="bg-amber-900 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-amber-950 transition shadow"
-              >
-                Save & Close ✨
               </button>
             </div>
           </div>
