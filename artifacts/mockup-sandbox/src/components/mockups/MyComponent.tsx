@@ -33,10 +33,10 @@ const DEFAULT_DATA: BoxData = {
     "You're doing amazing! You're my star and my heart's home. Never forget how loved and special you are! ❤️✨",
   headlineText: "THE DAILY GAZETTE — BREAKING NEWS: You Are Officially The Most Amazing Person Ever Born!",
   headlineBody: "Scientists, psychologists, and friends worldwide confirm that you possess a 100% rare gold heart and bring pure happiness to everyone around you. 📰✨",
-  locationTitle: "Our Cozy Favorite Spot 📍",
-  locationDesc: "Where we sat for hours, drank warm tea, and laughed until our stomachs hurt! ☕✨",
-  locationImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
-  photoUrl: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=600&q=80",
+  locationTitle: "Vietnam 📍",
+  locationDesc: "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨",
+  locationImage: "/couple-photo.jpg",
+  photoUrl: "/couple-photo.jpg",
   photoCaption: "Our Favorite Shot Together 📸❤️",
   audioUrl: "",
 };
@@ -48,15 +48,8 @@ export default function LittleBoxOfGoodies() {
   const [viewedItems, setViewedItems] = useState<Set<string>>(new Set());
   const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
   
-  // Custom Box Data with LocalStorage Persistence
-  const [boxData, setBoxData] = useState<BoxData>(() => {
-    try {
-      const saved = localStorage.getItem("goodies_box_data");
-      return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : DEFAULT_DATA;
-    } catch {
-      return DEFAULT_DATA;
-    }
-  });
+  // Set default data directly to ensure user photo & Vietnam spot always display
+  const [boxData, setBoxData] = useState<BoxData>(DEFAULT_DATA);
 
   // Audio Recording & Playback State
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -82,19 +75,10 @@ export default function LittleBoxOfGoodies() {
     { id: "note", type: "note", title: "Secret Note", icon: "📝", rotation: -2 },
     { id: "photo", type: "photo", title: "Favourite Shot", icon: "📷", rotation: 5 },
     { id: "news", type: "news", title: "Daily Gazette", icon: "📰", rotation: -4 },
-    { id: "location", type: "location", title: "Our Spot", icon: "📍", rotation: 3 },
+    { id: "location", type: "location", title: "Our Spot (Vietnam)", icon: "📍", rotation: 3 },
     { id: "gif", type: "gif", title: "Warm Hugs", icon: "🎀", rotation: -5 },
     { id: "coupon", type: "coupon", title: "Love Coupons", icon: "🎫", rotation: 2 },
   ];
-
-  // Save boxData to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem("goodies_box_data", JSON.stringify(boxData));
-    } catch (e) {
-      console.log("Could not save to localStorage", e);
-    }
-  }, [boxData]);
 
   // Ambient sound synthesizer
   const toggleAmbientSound = () => {
@@ -199,30 +183,6 @@ export default function LittleBoxOfGoodies() {
     } else {
       audioElementRef.current.play();
       setVoiceAudioPlaying(true);
-    }
-  };
-
-  // Image Upload Handler
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, key: "photoUrl" | "locationImage") => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBoxData((prev) => ({ ...prev, [key]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Audio File Upload Handler
-  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBoxData((prev) => ({ ...prev, audioUrl: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -593,22 +553,19 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 3. FAVOURITE SHOT */}
+              {/* 3. FAVOURITE SHOT WITH USER'S REAL PHOTO */}
               {goodies[activeItemIndex].type === "photo" && (
                 <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-2">
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
                     📷 Favourite Shot
                   </h3>
 
-                  <div className="bg-white p-3.5 pb-5 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[280px]">
-                    <div className="w-full h-48 sm:h-52 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
+                  <div className="bg-white p-3 pb-4 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[290px]">
+                    <div className="w-full h-64 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
                       <img
-                        src={boxData.photoUrl}
+                        src="/couple-photo.jpg"
                         alt="Favourite Shot"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
                       />
                     </div>
                     <p className="text-amber-950 text-2xl font-bold mt-2 font-serif">
@@ -642,27 +599,25 @@ export default function LittleBoxOfGoodies() {
                 </div>
               )}
 
-              {/* 5. OUR SPOT */}
+              {/* 5. OUR SPOT (VIETNAM) */}
               {goodies[activeItemIndex].type === "location" && (
                 <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-2">
-                    📍 Our Spot Section
+                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
+                    📍 Our Spot (Vietnam)
                   </h3>
 
                   <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
-                    {boxData.locationImage && (
-                      <div className="w-full h-36 rounded-xl overflow-hidden mb-3 border border-amber-200">
-                        <img
-                          src={boxData.locationImage}
-                          alt="Our Spot"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <h4 className="text-2xl font-bold text-amber-950">
+                    <div className="w-full h-44 rounded-xl overflow-hidden mb-3 border border-amber-200 shadow">
+                      <img
+                        src="/couple-photo.jpg"
+                        alt="Our Spot Vietnam"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h4 className="text-3xl font-bold text-amber-950 font-serif">
                       {boxData.locationTitle}
                     </h4>
-                    <p className="text-xl text-amber-800 mt-1">
+                    <p className="text-xl text-amber-800 mt-1 leading-snug">
                       {boxData.locationDesc}
                     </p>
                   </div>
