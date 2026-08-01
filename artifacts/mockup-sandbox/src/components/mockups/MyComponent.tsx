@@ -26,10 +26,10 @@ interface BoxData {
 }
 
 const DEFAULT_DATA: BoxData = {
-  toName: "My Dearest Bestie ❤️",
-  fromName: "With Love, Always ✨",
+  toName: "MY FOREVER",
+  fromName: "YOUR GIRL",
   noteText:
-    "You are my favorite person in the entire world! Thank you for always bringing so much warmth, bright smiles, and pure joy into my life. Here is a little digital care package filled with all my love for you! 💌✨",
+    "HEY!,MY FOREVER EVER ,LOVE OF MY LIFE . HAPPIEST BIRTHDAY MY MAN . YOU SEEMS EVEYTHING TO ME I CAN'T IMAGINE EVEN A 1 MICROSECOND WITHOUT YOU. YOU HOLD ME LIKE SOMEONE HOLDING SMALL BABY . YOU ARE MY HAPPY NOTIFICATION. HOPE YOUR EVERYSINGLE DAY FILLED WITH YOUR WISHES AND HAPPNIESS .",
   closingText:
     "You're doing amazing! You're my star and my heart's home. Never forget how loved and special you are! ❤️✨",
   headlineText: "THE DAILY GAZETTE — BREAKING NEWS: You Are Officially The Most Amazing Person Ever Born!",
