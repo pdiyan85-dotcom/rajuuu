@@ -154,16 +154,12 @@ function getPreviewPath(): string | null {
 function App() {
   const previewPath = getPreviewPath();
 
-  if (previewPath) {
-    return (
-      <PreviewRenderer
-        componentPath={previewPath}
-        modules={discoveredModules}
-      />
-    );
-  }
-
-  return <Gallery modules={discoveredModules} />;
+  return (
+    <PreviewRenderer
+      componentPath={previewPath || "MyComponent"}
+      modules={discoveredModules}
+    />
+  );
 }
 
 export default App;
