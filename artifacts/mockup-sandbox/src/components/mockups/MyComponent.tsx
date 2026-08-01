@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import couplePhoto from "../../assets/couple-photo.jpg";
+import voiceNote from "../../assets/voice-note.webm";
 
 // --- TYPES ---
 interface GoodieItem {
@@ -39,7 +40,7 @@ const DEFAULT_DATA: BoxData = {
   locationImage: couplePhoto,
   photoUrl: couplePhoto,
   photoCaption: "Our Favorite Shot Together 📸❤️",
-  audioUrl: "",
+  audioUrl: voiceNote,
 };
 
 export default function LittleBoxOfGoodies() {
