@@ -59,6 +59,12 @@ export default function LittleBoxOfGoodies() {
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [activeEditTab, setActiveEditTab] = useState<"front" | "note" | "news" | "photo" | "spot">("front");
+
+  // Inline Quick Editors
+  const [editingNoteInline, setEditingNoteInline] = useState<boolean>(false);
+  const [editingNewsInline, setEditingNewsInline] = useState<boolean>(false);
+  const [editingFrontInline, setEditingFrontInline] = useState<boolean>(false);
 
   // Audio Recording & Playback State
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -256,6 +262,11 @@ export default function LittleBoxOfGoodies() {
     }
   };
 
+  const openEditorForTab = (tab: "front" | "note" | "news" | "photo" | "spot") => {
+    setActiveEditTab(tab);
+    setIsEditModalOpen(true);
+  };
+
   return (
     <div
       className="min-h-screen font-sans select-none flex flex-col items-center justify-center p-3 sm:p-6"
@@ -280,11 +291,11 @@ export default function LittleBoxOfGoodies() {
         </button>
 
         <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition"
-          title="Edit Secret Note, Favorite Shot & Daily Gazette"
+          onClick={() => openEditorForTab("front")}
+          className="bg-amber-700 hover:bg-amber-800 text-white font-bold px-3.5 py-1.5 rounded-full text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition"
+          title="Edit Names, Secret Note, Daily Gazette & Photos"
         >
-          ✏️ <span>Edit Messages</span>
+          ✏️ <span>Edit All Sections</span>
         </button>
       </div>
 
@@ -310,63 +321,81 @@ export default function LittleBoxOfGoodies() {
               </p>
             </div>
 
-            <div
-              onClick={handleOpenBox}
-              className={`cursor-pointer group relative my-6 transition-transform duration-500 ${
-                isOpeningBox
-                  ? "scale-110 rotate-1 animate-bounce"
-                  : "hover:scale-105 animate-pulse"
-              }`}
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-48 h-8 bg-amber-200/80 border border-amber-300 rounded shadow-sm z-20 flex items-center justify-center">
-                <span className="text-amber-900/70 text-xs tracking-widest font-mono uppercase font-bold">
-                  ✂️ FRAGILE WITH CARE
-                </span>
-              </div>
+            {/* Interactive Cardboard Box */}
+            <div className="my-4 relative">
+              <div
+                onClick={handleOpenBox}
+                className={`cursor-pointer group relative transition-transform duration-500 ${
+                  isOpeningBox
+                    ? "scale-110 rotate-1 animate-bounce"
+                    : "hover:scale-105 animate-pulse"
+                }`}
+              >
+                {/* Packaging Tape Ribbon */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-48 h-8 bg-amber-200/80 border border-amber-300 rounded shadow-sm z-20 flex items-center justify-center">
+                  <span className="text-amber-900/70 text-xs tracking-widest font-mono uppercase font-bold">
+                    ✂️ FRAGILE WITH CARE
+                  </span>
+                </div>
 
-              <div className="w-64 h-56 sm:w-72 sm:h-64 bg-[#b88652] rounded-2xl shadow-xl border-4 border-[#936639] flex flex-col justify-between p-4 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:8px_8px]" />
+                {/* Cardboard Box Body */}
+                <div className="w-64 h-56 sm:w-72 sm:h-64 bg-[#b88652] rounded-2xl shadow-xl border-4 border-[#936639] flex flex-col justify-between p-4 relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_0)] bg-[size:8px_8px]" />
 
-                <div className="bg-[#fefae0] rounded-xl p-3 shadow-md border border-amber-200 text-left relative z-10 mt-4 rotate-[-1deg]">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
-                        DIGITAL CARE PACKAGE
+                  {/* Shipping Label */}
+                  <div className="bg-[#fefae0] rounded-xl p-3 shadow-md border border-amber-200 text-left relative z-10 mt-4 rotate-[-1deg] group-hover:border-amber-400 transition">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
+                          DIGITAL CARE PACKAGE
+                        </span>
+                        <div className="mt-2 text-sm sm:text-base font-semibold text-amber-950 leading-tight">
+                          <span className="text-xs text-amber-700 font-sans block">TO:</span>
+                          {boxData.toName}
+                        </div>
+                        <div className="mt-1 text-xs sm:text-sm text-amber-900">
+                          <span className="text-[10px] text-amber-700 font-sans block">FROM:</span>
+                          {boxData.fromName}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-2xl animate-bounce">❤️</span>
+                        <div className="w-8 h-8 border-2 border-dashed border-red-400 rounded-full flex items-center justify-center text-[9px] text-red-600 font-serif font-bold rotate-12">
+                          AIR MAIL
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Barcode */}
+                    <div className="mt-2 pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                      <div className="h-4 flex gap-1 items-center opacity-70">
+                        {[3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5].map((w, i) => (
+                          <div key={i} className="h-full bg-amber-950" style={{ width: `${w}px` }} />
+                        ))}
+                      </div>
+                      <span className="text-[9px] font-mono text-amber-800/60">
+                        #GOODIES-2026
                       </span>
-                      <div className="mt-2 text-sm sm:text-base font-semibold text-amber-950 leading-tight">
-                        <span className="text-xs text-amber-700 font-sans block">TO:</span>
-                        {boxData.toName}
-                      </div>
-                      <div className="mt-1 text-xs sm:text-sm text-amber-900">
-                        <span className="text-[10px] text-amber-700 font-sans block">FROM:</span>
-                        {boxData.fromName}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-2xl animate-bounce">❤️</span>
-                      <div className="w-8 h-8 border-2 border-dashed border-red-400 rounded-full flex items-center justify-center text-[9px] text-red-600 font-serif font-bold rotate-12">
-                        AIR MAIL
-                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-amber-200/60 flex items-center justify-between">
-                    <div className="h-4 flex gap-1 items-center opacity-70">
-                      {[3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5].map((w, i) => (
-                        <div key={i} className="h-full bg-amber-950" style={{ width: `${w}px` }} />
-                      ))}
-                    </div>
-                    <span className="text-[9px] font-mono text-amber-800/60">
-                      #GOODIES-2026
-                    </span>
+                  <div className="self-center bg-red-500 text-white font-bold text-base px-4 py-1.5 rounded-full shadow-lg transform group-hover:scale-110 transition">
+                    🎁 TAP TO OPEN
                   </div>
-                </div>
-
-                <div className="self-center bg-red-500 text-white font-bold text-base px-4 py-1.5 rounded-full shadow-lg transform group-hover:scale-110 transition">
-                  🎁 TAP TO OPEN
                 </div>
               </div>
+
+              {/* Direct Edit TO/FROM Names Button on Front Page */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openEditorForTab("front");
+                }}
+                className="mt-3 bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold font-sans py-1.5 px-3 rounded-full border border-amber-300 shadow-sm transition inline-flex items-center gap-1"
+              >
+                ✏️ Edit Front Page Names (TO & FROM)
+              </button>
             </div>
 
             <div className="mb-4">
@@ -597,10 +626,19 @@ export default function LittleBoxOfGoodies() {
               {/* 2. SECRET NOTE FOR YOU */}
               {goodies[activeItemIndex].type === "note" && (
                 <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    📝 A Secret Note For You
-                  </h3>
-                  <div className="w-full bg-[#fcf8f2] rounded-2xl p-5 border-2 border-amber-200 shadow-inner my-3 text-left relative">
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <h3 className="text-2xl font-bold text-amber-950">
+                      📝 A Secret Note For You
+                    </h3>
+                    <button
+                      onClick={() => openEditorForTab("note")}
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold font-sans px-2.5 py-1 rounded-full border border-amber-300 transition"
+                    >
+                      ✏️ Edit Note
+                    </button>
+                  </div>
+
+                  <div className="w-full bg-[#fcf8f2] rounded-2xl p-5 border-2 border-amber-200 shadow-inner my-2 text-left relative">
                     <span className="absolute top-2 right-2 text-xl">✨</span>
                     <p className="text-2xl text-amber-900 leading-relaxed font-normal">
                       "{boxData.noteText}"
@@ -612,9 +650,17 @@ export default function LittleBoxOfGoodies() {
               {/* 3. FAVOURITE SHOT */}
               {goodies[activeItemIndex].type === "photo" && (
                 <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    📷 Favourite Shot
-                  </h3>
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <h3 className="text-2xl font-bold text-amber-950">
+                      📷 Favourite Shot
+                    </h3>
+                    <button
+                      onClick={() => openEditorForTab("photo")}
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold font-sans px-2.5 py-1 rounded-full border border-amber-300 transition"
+                    >
+                      ✏️ Edit Photo
+                    </button>
+                  </div>
 
                   <div className="bg-white p-3.5 pb-5 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[280px]">
                     <div className="w-full h-48 sm:h-52 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
@@ -631,23 +677,25 @@ export default function LittleBoxOfGoodies() {
                       {boxData.photoCaption}
                     </p>
                   </div>
-
-                  <label className="mt-2 bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
-                    📷 Change Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, "photoUrl")}
-                      className="hidden"
-                    />
-                  </label>
                 </div>
               )}
 
-              {/* 4. DAILY GAZETTE */}
+              {/* 4. THE DAILY GAZETTE */}
               {goodies[activeItemIndex].type === "news" && (
                 <div className="w-full flex flex-col items-center">
-                  <div className="bg-[#f7f2e9] p-4 rounded-xl border-2 border-amber-900/30 text-amber-950 text-left my-2 shadow-md">
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <h3 className="text-2xl font-bold text-amber-950">
+                      🗞️ The Daily Gazette
+                    </h3>
+                    <button
+                      onClick={() => openEditorForTab("news")}
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold font-sans px-2.5 py-1 rounded-full border border-amber-300 transition"
+                    >
+                      ✏️ Edit Gazette
+                    </button>
+                  </div>
+
+                  <div className="bg-[#f7f2e9] p-4 rounded-xl border-2 border-amber-900/30 text-amber-950 text-left my-2 shadow-md w-full">
                     <div className="border-b-2 border-amber-950 pb-1 mb-2 flex justify-between items-center">
                       <span className="font-bold text-xs uppercase font-serif tracking-wider">
                         🗞️ THE DAILY GAZETTE
@@ -667,9 +715,17 @@ export default function LittleBoxOfGoodies() {
               {/* 5. OUR SPOT */}
               {goodies[activeItemIndex].type === "location" && (
                 <div className="w-full flex flex-col items-center">
-                  <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    📍 Our Spot Section
-                  </h3>
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <h3 className="text-2xl font-bold text-amber-950">
+                      📍 Our Spot Section
+                    </h3>
+                    <button
+                      onClick={() => openEditorForTab("spot")}
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold font-sans px-2.5 py-1 rounded-full border border-amber-300 transition"
+                    >
+                      ✏️ Edit Spot
+                    </button>
+                  </div>
 
                   <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
                     {boxData.locationImage && (
@@ -688,16 +744,6 @@ export default function LittleBoxOfGoodies() {
                       {boxData.locationDesc}
                     </p>
                   </div>
-
-                  <label className="mt-1 bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm py-2 px-4 rounded-xl cursor-pointer shadow transition flex items-center gap-1.5">
-                    🖼️ Change Spot Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handlePhotoUpload(e, "locationImage")}
-                      className="hidden"
-                    />
-                  </label>
                 </div>
               )}
 
@@ -772,121 +818,244 @@ export default function LittleBoxOfGoodies() {
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* EDIT & PERSONALIZE MODAL */}
+      {/* MULTI-TAB EDIT & PERSONALIZE MODAL */}
       {/* ---------------------------------------------------- */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-amber-200 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-3xl font-bold text-amber-950 mb-1 font-serif">
-              ✏️ Edit Messages & Sections
-            </h3>
-            <p className="text-amber-800 text-sm mb-4">
-              Edit your Secret Note, Favourite Shot caption, Daily Gazette headline, and names anytime!
-            </p>
-
-            <div className="space-y-4 text-left font-sans text-sm">
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  TO (Recipient Name):
-                </label>
-                <input
-                  type="text"
-                  value={boxData.toName}
-                  onChange={(e) => setBoxData({ ...boxData, toName: e.target.value })}
-                  className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  FROM (Your Name):
-                </label>
-                <input
-                  type="text"
-                  value={boxData.fromName}
-                  onChange={(e) => setBoxData({ ...boxData, fromName: e.target.value })}
-                  className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                />
-              </div>
-
-              {/* 1. EDIT SECRET NOTE */}
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  📝 Edit A Secret Note For You:
-                </label>
-                <textarea
-                  rows={3}
-                  value={boxData.noteText}
-                  onChange={(e) => setBoxData({ ...boxData, noteText: e.target.value })}
-                  className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                />
-              </div>
-
-              {/* 2. EDIT FAVOURITE SHOT CAPTION */}
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  📷 Edit Favourite Shot Caption:
-                </label>
-                <input
-                  type="text"
-                  value={boxData.photoCaption}
-                  onChange={(e) => setBoxData({ ...boxData, photoCaption: e.target.value })}
-                  className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                />
-              </div>
-
-              {/* 3. EDIT DAILY GAZETTE HEADLINE */}
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  📰 Edit Daily Gazette Headline:
-                </label>
-                <textarea
-                  rows={2}
-                  value={boxData.headlineText}
-                  onChange={(e) => setBoxData({ ...boxData, headlineText: e.target.value })}
-                  className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  📷 Upload Real Photo Memory:
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handlePhotoUpload(e, "photoUrl")}
-                  className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-amber-50"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-amber-900 mb-1">
-                  📍 Our Spot Title & Story:
-                </label>
-                <input
-                  type="text"
-                  placeholder="Spot title..."
-                  value={boxData.locationTitle}
-                  onChange={(e) => setBoxData({ ...boxData, locationTitle: e.target.value })}
-                  className="w-full p-2 border border-amber-300 rounded-xl mb-1"
-                />
-                <textarea
-                  rows={2}
-                  placeholder="Spot story..."
-                  value={boxData.locationDesc}
-                  onChange={(e) => setBoxData({ ...boxData, locationDesc: e.target.value })}
-                  className="w-full p-2 border border-amber-300 rounded-xl"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border-4 border-amber-200 max-h-[90vh] overflow-y-auto flex flex-col">
+            <div className="flex items-center justify-between border-b pb-3 mb-3">
+              <h3 className="text-2xl sm:text-3xl font-bold text-amber-950 font-serif">
+                ✏️ Edit Box Sections
+              </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="bg-amber-900 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-amber-950 transition"
+                className="text-amber-950 hover:bg-amber-100 w-8 h-8 rounded-full font-bold"
               >
-                Save Messages & Close ✨
+                ✕
+              </button>
+            </div>
+
+            {/* Editor Tabs Navigation */}
+            <div className="flex gap-1 bg-amber-100/80 p-1 rounded-xl mb-4 overflow-x-auto text-xs font-sans font-bold text-amber-900">
+              <button
+                onClick={() => setActiveEditTab("front")}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
+                  activeEditTab === "front" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
+                }`}
+              >
+                📦 Front Label
+              </button>
+              <button
+                onClick={() => setActiveEditTab("note")}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
+                  activeEditTab === "note" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
+                }`}
+              >
+                📝 Secret Note
+              </button>
+              <button
+                onClick={() => setActiveEditTab("news")}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
+                  activeEditTab === "news" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
+                }`}
+              >
+                🗞️ Daily Gazette
+              </button>
+              <button
+                onClick={() => setActiveEditTab("photo")}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
+                  activeEditTab === "photo" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
+                }`}
+              >
+                📷 Photo
+              </button>
+              <button
+                onClick={() => setActiveEditTab("spot")}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition whitespace-nowrap ${
+                  activeEditTab === "spot" ? "bg-amber-900 text-white shadow" : "hover:bg-amber-200"
+                }`}
+              >
+                📍 Spot
+              </button>
+            </div>
+
+            <div className="space-y-4 text-left font-sans text-sm flex-1">
+              {/* TAB 1: FRONT PAGE SHIPPING LABEL */}
+              {activeEditTab === "front" && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-amber-950 text-base">📦 Front Page Shipping Label</h4>
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      TO: (Recipient Name on Front Page):
+                    </label>
+                    <input
+                      type="text"
+                      value={boxData.toName}
+                      onChange={(e) => setBoxData({ ...boxData, toName: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      FROM: (Your Sender Name on Front Page):
+                    </label>
+                    <input
+                      type="text"
+                      value={boxData.fromName}
+                      onChange={(e) => setBoxData({ ...boxData, fromName: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: SECRET NOTE */}
+              {activeEditTab === "note" && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-amber-950 text-base">📝 Secret Note Content</h4>
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Secret Note Message:
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={boxData.noteText}
+                      onChange={(e) => setBoxData({ ...boxData, noteText: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Closing Card Final Message:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={boxData.closingText}
+                      onChange={(e) => setBoxData({ ...boxData, closingText: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-base"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: DAILY GAZETTE */}
+              {activeEditTab === "news" && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-amber-950 text-base">🗞️ Daily Gazette Newspaper Clipping</h4>
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Headline Title:
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={boxData.headlineText}
+                      onChange={(e) => setBoxData({ ...boxData, headlineText: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-serif font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Newspaper Article Story:
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={boxData.headlineBody}
+                      onChange={(e) => setBoxData({ ...boxData, headlineBody: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: FAVOURITE SHOT PHOTO */}
+              {activeEditTab === "photo" && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-amber-950 text-base">📷 Favourite Shot Photo Section</h4>
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Photo Caption:
+                    </label>
+                    <input
+                      type="text"
+                      value={boxData.photoCaption}
+                      onChange={(e) => setBoxData({ ...boxData, photoCaption: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Upload Photo File:
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, "photoUrl")}
+                      className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-amber-50"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Or paste photo URL..."
+                      value={boxData.photoUrl}
+                      onChange={(e) => setBoxData({ ...boxData, photoUrl: e.target.value })}
+                      className="w-full p-2 mt-1 border border-amber-200 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: OUR SPOT */}
+              {activeEditTab === "spot" && (
+                <div className="space-y-3">
+                  <h4 className="font-bold text-amber-950 text-base">📍 Our Spot Location Section</h4>
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Spot Title:
+                    </label>
+                    <input
+                      type="text"
+                      value={boxData.locationTitle}
+                      onChange={(e) => setBoxData({ ...boxData, locationTitle: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Spot Story / Memory Description:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={boxData.locationDesc}
+                      onChange={(e) => setBoxData({ ...boxData, locationDesc: e.target.value })}
+                      className="w-full p-2.5 border border-amber-300 rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-amber-900 mb-1">
+                      Upload Spot Location Photo:
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handlePhotoUpload(e, "locationImage")}
+                      className="w-full p-2 border border-amber-300 rounded-xl text-xs bg-amber-50"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 border-t pt-3 flex justify-end gap-2">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="bg-amber-900 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-amber-950 transition shadow"
+              >
+                Save & Close ✨
               </button>
             </div>
           </div>
