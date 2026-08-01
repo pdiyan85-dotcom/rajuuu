@@ -685,16 +685,16 @@ export default function LittleBoxOfGoodies() {
                   <div className="bg-white p-3 pb-4 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[290px]">
                     <div className="w-full h-64 rounded overflow-hidden bg-gray-100 shadow-inner border border-gray-200 flex items-center justify-center">
                       <img
-                        src={boxData.photoUrl}
+                        src={boxData.photoUrl || "/couple-photo.jpg"}
                         alt="Favourite Shot"
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
+                          (e.target as HTMLImageElement).src = "/couple-photo.jpg";
                         }}
                       />
                     </div>
                     <p className="text-amber-950 text-2xl font-bold mt-2 font-serif">
-                      {boxData.photoCaption}
+                      {boxData.photoCaption || "Our Favorite Shot Together 📸❤️"}
                     </p>
                   </div>
 
@@ -760,16 +760,19 @@ export default function LittleBoxOfGoodies() {
                   <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
                     <div className="w-full h-44 rounded-xl overflow-hidden mb-3 border border-amber-200 shadow">
                       <img
-                        src={boxData.locationImage}
+                        src={boxData.locationImage || "/couple-photo.jpg"}
                         alt="Our Spot Vietnam"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/couple-photo.jpg";
+                        }}
                       />
                     </div>
                     <h4 className="text-3xl font-bold text-amber-950 font-serif">
-                      {boxData.locationTitle}
+                      {boxData.locationTitle || "Vietnam 📍"}
                     </h4>
                     <p className="text-xl text-amber-800 mt-1 leading-snug">
-                      {boxData.locationDesc}
+                      {boxData.locationDesc || "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨"}
                     </p>
                   </div>
 
