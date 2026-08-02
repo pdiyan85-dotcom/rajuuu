@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import couplePhoto from "../../assets/couple-photo.jpg";
 import voiceNote from "../../assets/voice-note.webm";
 
@@ -30,16 +30,16 @@ const HARDCODED_DATA: BoxData = {
   toName: "MY FOREVER",
   fromName: "YOUR GIRL",
   noteText:
-    "HEY!,MY FOREVER EVER ,LOVE OF MY LIFE . HAPPIEST BIRTHDAY MY MAN . YOU SEEMS EVEYTHING TO ME I CAN'T IMAGINE EVEN A 1 MICROSECOND WITHOUT YOU. YOU HOLD ME LIKE SOMEONE HOLDING SMALL BABY . YOU ARE MY HAPPY NOTIFICATION. HOPE YOUR EVERYSINGLE DAY FILLED WITH YOUR WISHES AND HAPPNIESS .",
+    "HEY! MY FOREVER EVER, LOVE OF MY LIFE. HAPPIEST BIRTHDAY MY MAN. YOU MEAN EVERYTHING TO ME, I CAN'T IMAGINE EVEN A SINGLE SECOND WITHOUT YOU. YOU HOLD ME LIKE SOMEONE HOLDING A SMALL BABY. YOU ARE MY HAPPY NOTIFICATION. HOPE YOUR EVERY SINGLE DAY IS FILLED WITH YOUR WISHES AND HAPPINESS.",
   closingText:
-    "You're doing amazing! You're my star and my heart's home. Never forget how loved and special you are! Γ¥ñ∩╕ÅΓ£¿",
-  headlineText: "THE DAILY GAZETTE ΓÇö BREAKING NEWS: You Are Officially The Most Amazing Person Ever Born!",
-  headlineBody: "Scientists, psychologists, and friends worldwide confirm that you possess a 100% rare gold heart and bring pure happiness to everyone around you. ≡ƒô░Γ£¿",
-  locationTitle: "Vietnam ≡ƒôì",
-  locationDesc: "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! ≡ƒç╗≡ƒç│Γ£¿",
+    "You're doing amazing! You're my star and my heart's home. Never forget how loved and special you are! ❤️✨",
+  headlineText: "THE DAILY GAZETTE — BREAKING NEWS: You Are Officially The Most Amazing Person Ever Born!",
+  headlineBody: "Scientists, psychologists, and friends worldwide confirm that you possess a 100% rare gold heart and bring pure happiness to everyone around you. 📰✨",
+  locationTitle: "Vietnam 📍",
+  locationDesc: "Our unforgettable trip, breathtaking views, and magical favorite memories in Vietnam! 🇻🇳✨",
   locationImage: couplePhoto,
   photoUrl: couplePhoto,
-  photoCaption: "Our Favorite Shot Together ≡ƒô╕Γ¥ñ∩╕Å",
+  photoCaption: "Our Favorite Shot Together 📸❤️",
   audioUrl: voiceNote,
 };
 
@@ -64,13 +64,13 @@ export default function LittleBoxOfGoodies() {
   const synthIntervalRef = useRef<any>(null);
 
   const goodies: GoodieItem[] = [
-    { id: "voice", type: "voice", title: "Voice Note", icon: "≡ƒÄÖ∩╕Å", rotation: -3 },
-    { id: "note", type: "note", title: "Secret Note", icon: "≡ƒô¥", rotation: -2 },
-    { id: "photo", type: "photo", title: "Favourite Shot", icon: "≡ƒô╖", rotation: 5 },
-    { id: "news", type: "news", title: "Daily Gazette", icon: "≡ƒô░", rotation: -4 },
-    { id: "location", type: "location", title: "Our Spot (Vietnam)", icon: "≡ƒôì", rotation: 3 },
-    { id: "gif", type: "gif", title: "Warm Hugs", icon: "≡ƒÄÇ", rotation: -5 },
-    { id: "coupon", type: "coupon", title: "Love Coupons", icon: "≡ƒÄ½", rotation: 2 },
+    { id: "voice", type: "voice", title: "Voice Note", icon: "🎙️", rotation: -3 },
+    { id: "note", type: "note", title: "Secret Note", icon: "📝", rotation: -2 },
+    { id: "photo", type: "photo", title: "Favourite Shot", icon: "📷", rotation: 5 },
+    { id: "news", type: "news", title: "Daily Gazette", icon: "📰", rotation: -4 },
+    { id: "location", type: "location", title: "Our Spot (Vietnam)", icon: "📍", rotation: 3 },
+    { id: "gif", type: "gif", title: "Warm Hugs", icon: "🎀", rotation: -5 },
+    { id: "coupon", type: "coupon", title: "Love Coupons", icon: "🎫", rotation: 2 },
   ];
 
   // Ambient sound synthesizer toggle
@@ -183,7 +183,7 @@ export default function LittleBoxOfGoodies() {
           className="bg-white/90 backdrop-blur border border-amber-200 shadow-md hover:bg-amber-50 text-amber-900 px-3 py-1.5 rounded-full text-base sm:text-lg flex items-center gap-2 transition"
           title="Toggle Lofi Ambient Sound"
         >
-          <span>{isAudioPlaying ? "≡ƒöè" : "≡ƒöç"}</span>
+          <span>{isAudioPlaying ? "🔊" : "🔇"}</span>
           <span className="font-semibold text-xs sm:text-sm hidden xs:inline">
             {isAudioPlaying ? "Lofi Music ON" : "Music OFF"}
           </span>
@@ -208,7 +208,7 @@ export default function LittleBoxOfGoodies() {
                 you've got mail
               </h1>
               <p className="text-amber-800/80 text-xl font-medium mt-1">
-                a little care package for you Γ¥ñ∩╕Å
+                a little care package for you ❤️
               </p>
             </div>
 
@@ -225,7 +225,7 @@ export default function LittleBoxOfGoodies() {
                 {/* Packaging Tape Ribbon */}
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-48 h-8 bg-amber-200/80 border border-amber-300 rounded shadow-sm z-20 flex items-center justify-center">
                   <span className="text-amber-900/70 text-xs tracking-widest font-mono uppercase font-bold">
-                    Γ£é∩╕Å FRAGILE WITH CARE
+                    FRAGILE - HANDLE WITH CARE
                   </span>
                 </div>
 
@@ -251,7 +251,7 @@ export default function LittleBoxOfGoodies() {
                       </div>
 
                       <div className="flex flex-col items-end gap-1">
-                        <span className="text-2xl animate-bounce">Γ¥ñ∩╕Å</span>
+                        <span className="text-2xl animate-bounce">❤️</span>
                         <div className="w-8 h-8 border-2 border-dashed border-red-400 rounded-full flex items-center justify-center text-[9px] text-red-600 font-serif font-bold rotate-12">
                           AIR MAIL
                         </div>
@@ -271,7 +271,7 @@ export default function LittleBoxOfGoodies() {
                   </div>
 
                   <div className="self-center bg-red-500 text-white font-bold text-base px-4 py-1.5 rounded-full shadow-lg transform group-hover:scale-110 transition">
-                    ≡ƒÄü TAP TO OPEN
+                    🎁 TAP TO OPEN
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function LittleBoxOfGoodies() {
 
             <div className="mb-4">
               <p className="text-amber-800/70 text-lg">
-                Made with love & special memories Γ£¿
+                Made with love & special memories ✨
               </p>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function LittleBoxOfGoodies() {
                 your little box of goodies
               </h2>
               <p className="text-amber-800/80 text-lg mt-0.5">
-                Tap each item to unwrap the surprise inside ≡ƒÆî
+                Tap each item to unwrap the surprise inside 💌
               </p>
 
               <div className="mt-2.5 bg-amber-100/80 rounded-full p-1.5 border border-amber-200/80 flex items-center justify-between text-xs text-amber-900 font-semibold px-3 max-w-xs mx-auto">
@@ -306,7 +306,7 @@ export default function LittleBoxOfGoodies() {
                       key={g.id}
                       className={viewedItems.has(g.id) ? "text-amber-600 font-bold" : "opacity-30"}
                     >
-                      Γÿà
+                      ★
                     </span>
                   ))}
                 </div>
@@ -330,7 +330,7 @@ export default function LittleBoxOfGoodies() {
 
                     {isViewed && (
                       <span className="absolute top-2 right-2 text-xs bg-amber-200 text-amber-900 rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                        Γ£ô
+                        ✓
                       </span>
                     )}
 
@@ -351,7 +351,7 @@ export default function LittleBoxOfGoodies() {
                 onClick={() => setScreen(3)}
                 className="w-full bg-gradient-to-r from-red-500 to-amber-600 text-white font-bold text-xl py-3 px-6 rounded-2xl shadow-lg hover:from-red-600 hover:to-amber-700 transition"
               >
-                {viewedItems.size === 7 ? "Γ£¿ Open Final Card Γ¥ñ∩╕Å" : "Read Closing Card Γ¥ñ∩╕Å"}
+                {viewedItems.size === 7 ? "✨ Open Final Card ❤️" : "Read Closing Card ❤️"}
               </button>
             </div>
           </div>
@@ -365,9 +365,9 @@ export default function LittleBoxOfGoodies() {
             <div className="bg-[#fffdf9] rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-200 max-w-sm w-full relative rotate-[-1deg]">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-6 bg-red-100/80 border border-red-200 rotate-1 shadow-sm" />
 
-              <span className="text-4xl sm:text-5xl block mb-2">≡ƒÄüΓ£¿</span>
+              <span className="text-4xl sm:text-5xl block mb-2">🎁✨</span>
               <h2 className="text-3xl sm:text-4xl font-bold text-amber-950 mb-1 font-serif">
-                and little goodies Γ¥ñ∩╕Å
+                and little goodies ❤️
               </h2>
 
               <p className="text-2xl sm:text-3xl text-amber-900 leading-relaxed my-4 font-normal">
@@ -382,7 +382,7 @@ export default function LittleBoxOfGoodies() {
                   }}
                   className="w-full bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold py-2.5 px-4 rounded-xl text-lg transition"
                 >
-                  ≡ƒöä Explore Goodies Grid Again
+                  🔄 Explore Goodies Grid Again
                 </button>
 
                 <button
@@ -392,7 +392,7 @@ export default function LittleBoxOfGoodies() {
                   }}
                   className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl text-lg transition shadow"
                 >
-                  ≡ƒôª Pack Up Box & Replay
+                  📦 Pack Up Box & Replay
                 </button>
               </div>
             </div>
@@ -416,7 +416,7 @@ export default function LittleBoxOfGoodies() {
               onClick={() => setActiveItemIndex(null)}
               className="absolute top-3 right-3 text-amber-900/60 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg transition"
             >
-              Γ£ò
+              ✕
             </button>
 
             {/* CARD CONTENT TYPES */}
@@ -425,16 +425,16 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "voice" && (
                 <div className="w-full flex flex-col items-center">
                   <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    ≡ƒÄÖ∩╕Å Voice Note Section
+                    🎙️ Voice Note Section
                   </h3>
                   <p className="text-amber-800 text-base mb-3">
-                    Listen to your special audio message below! Γ¥ñ∩╕Å
+                    Listen to your special audio message below! ❤️
                   </p>
 
                   <div className="w-full bg-[#3a3532] text-amber-100 p-4 rounded-2xl border-4 border-[#252220] shadow-xl relative overflow-hidden my-2">
                     <div className="bg-[#e6dccb] text-amber-950 p-2 rounded-lg border border-amber-300 flex justify-between items-center text-xs font-mono mb-2">
                       <span>SIDE A - VOICE NOTE</span>
-                      <span>AUDIO READY Γ£ô</span>
+                      <span>AUDIO READY ✓</span>
                     </div>
 
                     <div className="flex justify-center items-center gap-6 my-2">
@@ -462,7 +462,7 @@ export default function LittleBoxOfGoodies() {
                       onClick={toggleVoicePlayback}
                       className="w-full bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold text-lg py-3 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition"
                     >
-                      <span>{voiceAudioPlaying ? "ΓÅ╕∩╕Å Pause Voice Note" : "Γû╢∩╕Å Play Voice Note"}</span>
+                      <span>{voiceAudioPlaying ? "⏸️ Pause Voice Note" : "▶️ Play Voice Note"}</span>
                     </button>
                   </div>
                 </div>
@@ -472,11 +472,11 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "note" && (
                 <div className="w-full flex flex-col items-center">
                   <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    ≡ƒô¥ A Secret Note For You
+                    📝 A Secret Note For You
                   </h3>
 
                   <div className="w-full bg-[#fcf8f2] rounded-2xl p-5 border-2 border-amber-200 shadow-inner my-2 text-left relative">
-                    <span className="absolute top-2 right-2 text-xl">Γ£¿</span>
+                    <span className="absolute top-2 right-2 text-xl">✨</span>
                     <p className="text-2xl text-amber-900 leading-relaxed font-normal">
                       "{HARDCODED_DATA.noteText}"
                     </p>
@@ -488,7 +488,7 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "photo" && (
                 <div className="w-full flex flex-col items-center">
                   <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    ≡ƒô╖ Favourite Shot
+                    📷 Favourite Shot
                   </h3>
 
                   <div className="bg-white p-3 pb-4 rounded-xl shadow-xl border border-gray-200 rotate-[-1deg] my-2 w-full max-w-[290px]">
@@ -510,13 +510,13 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "news" && (
                 <div className="w-full flex flex-col items-center">
                   <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    ≡ƒù₧∩╕Å The Daily Gazette
+                    🗞️ The Daily Gazette
                   </h3>
 
                   <div className="bg-[#f7f2e9] p-4 rounded-xl border-2 border-amber-900/30 text-amber-950 text-left my-2 shadow-md w-full">
                     <div className="border-b-2 border-amber-950 pb-1 mb-2 flex justify-between items-center">
                       <span className="font-bold text-xs uppercase font-serif tracking-wider">
-                        ≡ƒù₧∩╕Å THE DAILY GAZETTE
+                        🗞️ THE DAILY GAZETTE
                       </span>
                       <span className="text-[10px]">VOL. 2026</span>
                     </div>
@@ -534,7 +534,7 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "location" && (
                 <div className="w-full flex flex-col items-center">
                   <h3 className="text-2xl font-bold text-amber-950 mb-1">
-                    ≡ƒôì Our Spot (Vietnam)
+                    📍 Our Spot (Vietnam)
                   </h3>
 
                   <div className="w-full bg-[#fdfaf5] p-4 rounded-2xl border-2 border-amber-200 shadow-md text-center my-2">
@@ -546,7 +546,7 @@ export default function LittleBoxOfGoodies() {
                       />
                     </div>
                     <h4 className="text-3xl font-bold text-amber-950 font-serif">
-                      Vietnam ≡ƒôì
+                      Vietnam 📍
                     </h4>
                     <p className="text-xl text-amber-800 mt-1 leading-snug">
                       {HARDCODED_DATA.locationDesc}
@@ -559,7 +559,7 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "gif" && (
                 <div className="w-full flex flex-col items-center">
                   <div className="bg-pink-50 p-6 rounded-3xl border-2 border-pink-200 shadow-inner my-2 text-center animate-bounce">
-                    <span className="text-6xl block">≡ƒ½é≡ƒÆûΓ£¿</span>
+                    <span className="text-6xl block">🫂💖✨</span>
                     <h4 className="text-3xl font-bold text-pink-900 mt-2">
                       Infinite Warm Hug!
                     </h4>
@@ -571,12 +571,12 @@ export default function LittleBoxOfGoodies() {
               {goodies[activeItemIndex].type === "coupon" && (
                 <div className="w-full flex flex-col items-center gap-2">
                   <h3 className="text-2xl font-bold text-amber-950">
-                    ≡ƒÄ½ Redeemable Love Coupons
+                    🎫 Redeemable Love Coupons
                   </h3>
                   {[
-                    "Γÿò 1 Free Coffee & Deep Talk",
-                    "≡ƒì┐ 1 Movie Night Choice",
-                    "≡ƒñù 1 Unlimited Warm Hug",
+                    "☕ 1 Free Coffee & Deep Talk",
+                    "🍿 1 Movie Night Choice",
+                    "🤗 1 Unlimited Warm Hug",
                   ].map((couponText, idx) => (
                     <div
                       key={idx}
@@ -598,7 +598,7 @@ export default function LittleBoxOfGoodies() {
                             : "bg-amber-600 hover:bg-amber-700 text-white"
                         }`}
                       >
-                        {couponsRedeemed[idx] ? "REDEEMED Γ£ô" : "REDEEM NOW"}
+                        {couponsRedeemed[idx] ? "REDEEMED ✓" : "REDEEM NOW"}
                       </button>
                     </div>
                   ))}
@@ -612,13 +612,13 @@ export default function LittleBoxOfGoodies() {
                 onClick={handlePrevCard}
                 className="bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold px-4 py-2 rounded-xl text-base transition"
               >
-                Γ¼à∩╕Å Previous
+                ⬅️ Previous
               </button>
               <button
                 onClick={handleNextCard}
                 className="bg-amber-900 hover:bg-amber-950 text-amber-50 font-bold px-4 py-2 rounded-xl text-base transition"
               >
-                Next Γ₧í∩╕Å
+                Next ➡️
               </button>
             </div>
           </div>

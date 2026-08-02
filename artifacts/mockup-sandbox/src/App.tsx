@@ -153,12 +153,49 @@ function getPreviewPath(): string | null {
 
 function App() {
   const previewPath = getPreviewPath();
+  const currentPath = previewPath || "Project2Anniversary";
+  const basePath = getBasePath();
 
   return (
-    <PreviewRenderer
-      componentPath={previewPath || "MyComponent"}
-      modules={discoveredModules}
-    />
+    <div className="min-h-screen flex flex-col">
+      {/* Top Project Switcher Navigation */}
+      <header className="bg-rose-950/90 text-amber-200 border-b border-amber-400/30 px-4 py-2 flex items-center justify-between z-50 text-xs font-sans shadow-md backdrop-blur">
+        <div className="flex items-center gap-2 font-bold tracking-wider">
+          <span className="text-amber-400 text-sm">🎁 GOODIES PROJECTS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href={`${basePath}/preview/Project1Goodies`}
+            className={`px-3 py-1.5 rounded-full font-bold transition flex items-center gap-1 border ${
+              currentPath === "Project1Goodies"
+                ? "bg-amber-400 text-rose-950 border-amber-200 shadow"
+                : "bg-rose-900/60 text-amber-200 border-amber-400/30 hover:bg-rose-900"
+            }`}
+          >
+            <span>📦 Project 1 (Hardcoded Goodies)</span>
+          </a>
+
+          <a
+            href={`${basePath}/preview/Project2Anniversary`}
+            className={`px-3 py-1.5 rounded-full font-bold transition flex items-center gap-1 border ${
+              currentPath === "Project2Anniversary"
+                ? "bg-amber-400 text-rose-950 border-amber-200 shadow"
+                : "bg-rose-900/60 text-amber-200 border-amber-400/30 hover:bg-rose-900"
+            }`}
+          >
+            <span>💍 Project 2 (2 Year Anniversary - Edit Mode)</span>
+          </a>
+        </div>
+      </header>
+
+      {/* Component Renderer */}
+      <main className="flex-1">
+        <PreviewRenderer
+          componentPath={currentPath}
+          modules={discoveredModules}
+        />
+      </main>
+    </div>
   );
 }
 
